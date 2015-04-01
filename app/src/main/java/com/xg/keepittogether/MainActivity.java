@@ -1,25 +1,37 @@
 package com.xg.keepittogether;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ListView;
 
 import com.parse.ParseObject;
 
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends ActionBarActivity implements EventAdapter.CompleteQueryListner {
+
+    private SharedPreferences userPreferences;
+    EventAdapter myAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ParseObject testObject = new ParseObject("TestObject");
-        testObject.put("foo", "bar");
-        testObject.saveInBackground();
+        userPreferences = getSharedPreferences("User_Preferences", MODE_PRIVATE);
+
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        /*myAdapter = new EventAdapter(this, userPreferences);
+        ListView allEvent = (ListView)findViewById(R.id.listView);
+        allEvent.setAdapter(myAdapter);*/
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -37,9 +49,20 @@ public class MainActivity extends ActionBarActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Intent settingIntent = new Intent(this, SettingActivity.class);
+            startActivity(settingIntent);
             return true;
         }
-
+        if (id == R.id.action_add_new_event) {
+            Intent addEventIntent = new Intent(this, AddEventActivity.class);
+            startActivity(addEventIntent);
+            return true;
+        }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void setList() {
+        myAdapter.notifyDataSetChanged();
     }
 }
