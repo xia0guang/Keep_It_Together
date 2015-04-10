@@ -72,7 +72,7 @@ public class LoginActivity extends Activity {
                     // Start an intent for the dispatch activity
                     FragmentTransaction transiction = getFragmentManager().beginTransaction();
                     SelectMemberNameFragment selectMemberNameFragment = new SelectMemberNameFragment();
-                    transiction.add(R.id.login_layout, selectMemberNameFragment,"selectMemberName");
+                    transiction.add(R.id.select_name_layout, selectMemberNameFragment,"selectMemberName");
                     transiction.commit();
 
                 }

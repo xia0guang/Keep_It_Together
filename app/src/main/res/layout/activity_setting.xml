@@ -11,18 +11,10 @@
         android:orientation="vertical"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="175dp"
         android:id="@+id/linearLayout"
-        android:gravity="center_horizontal">
-
-        <EditText
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/userIdET"
-            android:autoText="false"
-            android:hint="Input user ID" />
+        android:gravity="center_horizontal"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true">
 
         <LinearLayout
             android:orientation="horizontal"
@@ -31,16 +23,18 @@
             android:paddingTop="50dp">
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/setting_family_acount_TV"
+                android:id="@+id/textView3"
+                android:layout_weight="2" />
+
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="@string/color_TV"
-                android:id="@+id/textView3" />
-
-            <Spinner
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/colorOptions" />
+                android:id="@+id/familyAcountTV"
+                android:layout_weight="1" />
 
         </LinearLayout>
 
@@ -51,15 +45,54 @@
             android:paddingTop="50dp"
             android:gravity="center_horizontal">
 
-            <Button
-                android:layout_width="wrap_content"
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/save_button"
-                android:id="@+id/saveBT"
-                android:layout_below="@+id/linearLayout"
-                android:layout_centerHorizontal="true"
-                android:onClick="saveSetting"/>
+                android:text="@string/setting_member_name_TV"
+                android:id="@+id/textView13"
+                android:layout_weight="2" />
 
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:id="@+id/memberNameTV"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:paddingTop="50dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/setting_color_TV"
+                android:id="@+id/textView15"
+                android:layout_weight="2" />
+
+            <Spinner
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/colorSpinner"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:paddingTop="50dp">
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/log_out_BT"
+                android:id="@+id/signOutBT"
+                android:background="#c8c20200"
+                android:onClick="signOut"/>
         </LinearLayout>
 
     </LinearLayout>

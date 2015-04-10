@@ -2,35 +2,71 @@ package com.xg.keepittogether;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ListView;
 
+import com.parse.FindCallback;
+import com.parse.ParseException;
 import com.parse.ParseObject;
+import com.parse.ParseQuery;
+
+import java.util.List;
 
 
-public class MainActivity extends ActionBarActivity implements EventAdapter.CompleteQueryListner {
+public class MainActivity extends ActionBarActivity {
 
     private SharedPreferences userPreferences;
     EventAdapter myAdapter;
+    private RecyclerView mRecyclerView;
+    private RecyclerView.Adapter mAdapter;
+    private RecyclerView.LayoutManager mLayoutManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         userPreferences = getSharedPreferences("User_Preferences", MODE_PRIVATE);
+
+        mRecyclerView = (RecyclerView)findViewById(R.id.recycleView);
+        mRecyclerView.setHasFixedSize(true);
+
+        // use a linear layout manager
+        mLayoutManager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(mLayoutManager);
+
+        // specify an adapter (see also next example)
+
+
+
 
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        /*myAdapter = new EventAdapter(this, userPreferences);
-        ListView allEvent = (ListView)findViewById(R.id.listView);
-        allEvent.setAdapter(myAdapter);*/
+        ParseQuery<ParseObject> query = ParseQuery.getQuery("Event");
+//        query.whereEqualTo("memberName", userPreferences.getString("memberName", "noValue"));
+        query.findInBackground(new FindCallback<ParseObject>() {
+            public void done(List<ParseObject> list, ParseException e) {
+                if (e == null) {
+                    mAdapter = new EventAdapter(list, userPreferences);
+                    mRecyclerView.setAdapter(mAdapter);
+                    try{
+
+                    } catch (ClassCastException cce) {
+                        cce.printStackTrace();
+                    }
+                } else {
+                    Log.d("Query", "Error: " + e.getMessage());
+                }
+            }
+        });
+
     }
 
     @Override
@@ -59,10 +95,5 @@ public class MainActivity extends ActionBarActivity implements EventAdapter.Comp
             return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public void setList() {
-        myAdapter.notifyDataSetChanged();
     }
 }

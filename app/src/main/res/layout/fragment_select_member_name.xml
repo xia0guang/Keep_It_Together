@@ -2,64 +2,72 @@
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.xg.keepittogether.SelectMemberNameFragment"
-    android:background="#ffdaf5ff"
-    android:paddingTop="100dp"
-    android:paddingBottom="100dp"
-    android:paddingLeft="25dp"
-    android:paddingRight="25dp">
+    android:background="#ffdaf5ff">
 
 
     <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
 
-        <TextView
+        <LinearLayout
+            android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="@string/select_member_name_TV"
-            android:id="@+id/textView10"
-            android:layout_weight="1"
-            android:gravity="right" />
+            android:paddingTop="30dp">
 
-        <Spinner
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:text="@string/select_member_name_TV"
+                android:id="@+id/textView10"
+                android:layout_weight="2"
+                android:gravity="right" />
+
+            <Spinner
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/memberNameSpinner"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/memberNameSpinner"
-            android:layout_weight="1" />
-    </LinearLayout>
+            android:layout_gravity="center"
+            android:paddingTop="30dp">
 
-    <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:text="@string/create_member_name_TV"
+                android:id="@+id/textView11"
+                android:layout_weight="2"
+                android:gravity="right" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="@string/create_member_name_TV"
-            android:id="@+id/textView11" />
+            <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/createMemberNameET"
+                android:layout_weight="1" />
+        </LinearLayout>
 
-        <EditText
+        <LinearLayout
+            android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/createMemberNameET" />
-    </LinearLayout>
+            android:layout_gravity="center_horizontal|bottom"
+            android:gravity="center_horizontal"
+            android:paddingTop="30dp">
 
-    <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal|bottom"
-        android:gravity="center_horizontal">
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/save_member_name_BT"
-            android:id="@+id/saveMemberNameBT" />
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/save_member_name_BT"
+                android:id="@+id/saveMemberNameBT" />
+        </LinearLayout>
     </LinearLayout>
 </FrameLayout>

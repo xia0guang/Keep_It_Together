@@ -94,20 +94,23 @@ public class SignUpActivity extends Activity {
                 } else {
 
                     //Store member name in Members Table
-                    ParseObject privateNote = new ParseObject("Members");
+                    ParseObject member = new ParseObject("Members");
                     EditText memberNameView = (EditText)findViewById(R.id.signUpMemberNameET);
-                    privateNote.put("memberName", memberNameView.getText().toString());
-                    privateNote.setACL(new ParseACL(ParseUser.getCurrentUser()));
-                    privateNote.saveInBackground();
+                    member.put("memberName", memberNameView.getText().toString());
+                    member.put("color", EventColor.BLUE);
+                    member.setACL(new ParseACL(ParseUser.getCurrentUser()));
+                    member.saveInBackground();
+
                     //Set member name in preferences file
                     SharedPreferences userPref = getSharedPreferences("User_Preferences", Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = userPref.edit();
                     editor.putString("memberName", memberNameView.getText().toString());
+                    editor.putInt("color", EventColor.BLUE);
                     editor.commit();
 
                     // Start an intent for the dispatch activity
                     Intent intent = new Intent(SignUpActivity.this, DispatchActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+
                     startActivity(intent);
 
                 }
