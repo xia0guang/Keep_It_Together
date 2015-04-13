@@ -27,9 +27,8 @@ import java.util.List;
 public class MainActivity extends ActionBarActivity {
 
     private SharedPreferences userPref;
-    private EventAdapter myAdapter;
+    private EventAdapter mAdapter;
     private RecyclerView mRecyclerView;
-    private RecyclerView.Adapter mAdapter;
     private LinearLayoutManager mLayoutManager;
     private MaterialCalendarView calendarView;
 
