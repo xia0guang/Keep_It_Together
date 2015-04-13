@@ -10,7 +10,7 @@
     <string name="action_add_new_event">Add Event</string>
     <string name="member_name_TV">Member name:</string>
     <string name="event_TV">Event:</string>
-    <string name="add_new_event_BT">Add Event</string>
+    <string name="add_new_event_BT">Save</string>
     <string name="color_TV">Color:</string>
     <string name="title_activity_login">LoginActivity</string>
     <string name="login_email_TV">Email:</string>
@@ -50,5 +50,6 @@
     <string name="event_notification_TV">Alert:</string>
     <string name="event_note_TV">Note:</string>
     <string name="event_note_hint">Enter event note</string>
+    <string name="title_activity_edit_event">EditEventActivity</string>
 
 </resources>
