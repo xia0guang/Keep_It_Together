@@ -9,12 +9,10 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.parse.GetCallback;
 import com.parse.ParseACL;
@@ -71,10 +69,10 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
             titleView.setText(bundle.getString("title"));
             noteView.setText(bundle.getString("note"));
         }
-        setEventDate(startDateView, startCal);
-        setEventTime(startTimeView, startCal);
-        setEventDate(endDateView, endCal);
-        setEventTime(endTimeView, endCal);
+        setEventDateView(startDateView, startCal);
+        setEventTimeView(startTimeView, startCal);
+        setEventDateView(endDateView, endCal);
+        setEventTimeView(endTimeView, endCal);
 
         alertTimeSpinner = (Spinner)findViewById(R.id.eventAlertSpinner);
         ArrayAdapter<String> alertSpinnerAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, alertTimeSpinnerList);
@@ -153,12 +151,12 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
         }
     }
 
-    private void setEventDate(TextView dateView, Calendar cal) {
+    private void setEventDateView(TextView dateView, Calendar cal) {
 //        dateView.setText(weekdayList[calendar.get(Calendar.WEEK_OF_MONTH)] + ", " + monthsList[calendar.get(Calendar.MONTH)] + " " + calendar.get(Calendar.DAY_OF_MONTH) + ", " + calendar.get(Calendar.YEAR));
         dateView.setText(weekdayList[cal.get(Calendar.WEEK_OF_MONTH)] + String.format(", %tB %te, %tY", cal, cal, cal));
     }
 
-    private void setEventTime(TextView timeView, Calendar cal) {
+    private void setEventTimeView(TextView timeView, Calendar cal) {
 //        timeView.setText(String.format("%d:%02d ", calendar.get(Calendar.HOUR), calendar.get(Calendar.MINUTE)) + amPmList[calendar.get(Calendar.AM_PM)]);
         timeView.setText(String.format("%tl:%tM %tp", cal, cal, cal));
     }
@@ -187,16 +185,16 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
     public void setDate(Calendar cal, boolean isStart) {
         if(isStart) {
             startCal = cal;
-            setEventDate(startDateView, startCal);
+            setEventDateView(startDateView, startCal);
 
             endCal = (Calendar)startCal.clone();
             endCal.set(Calendar.HOUR_OF_DAY, endCal.get(Calendar.HOUR_OF_DAY) + 1);
-            setEventDate(endDateView, endCal);
-            setEventTime(endTimeView, endCal);
+            setEventDateView(endDateView, endCal);
+            setEventTimeView(endTimeView, endCal);
 
         } else {
             endCal = cal;
-            setEventDate(endDateView, endCal);
+            setEventDateView(endDateView, endCal);
         }
     }
 
@@ -205,16 +203,16 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
     public void setTime(Calendar cal, boolean isStart) {
         if(isStart) {
             startCal = cal;
-            setEventTime(startTimeView, startCal);
+            setEventTimeView(startTimeView, startCal);
 
             endCal = (Calendar)startCal.clone();
             endCal.set(Calendar.HOUR_OF_DAY, endCal.get(Calendar.HOUR_OF_DAY)+1);
-            setEventDate(endDateView, endCal);
-            setEventTime(endTimeView, endCal);
+            setEventDateView(endDateView, endCal);
+            setEventTimeView(endTimeView, endCal);
 
         } else {
             endCal = cal;
-            setEventTime(endTimeView, endCal);
+            setEventTimeView(endTimeView, endCal);
         }
     }
 }

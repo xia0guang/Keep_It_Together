@@ -6,15 +6,23 @@ import com.parse.Parse;
 import com.parse.ParseACL;
 //import com.parse.ParseCrashReporting;
 import com.parse.ParseCrashReporting;
+import com.parse.ParseObject;
 import com.parse.ParseUser;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by wuxiaoguang on 3/29/15.
  */
 public class MyApplication extends Application {
+
+    protected List<List<ParseObject>> eventList;
+
     @Override
     public void onCreate() {
         super.onCreate();
+        eventList = new ArrayList<List<ParseObject>>();
 
         // Initialize Crash Reporting.
         ParseCrashReporting.enable(this);
@@ -30,4 +38,5 @@ public class MyApplication extends Application {
 //        defaultACL.setPublicReadAccess(true);
 //        ParseACL.setDefaultACL(defaultACL, true);
     }
+
 }
