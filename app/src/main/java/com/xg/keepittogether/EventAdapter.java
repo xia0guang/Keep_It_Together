@@ -40,16 +40,8 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
         this.userPref = userPref;
         positionMap = new HashMap<>();
         reversePositionMap = new HashMap<>();
-        for (int i = 0; i <eventList.size(); i++) {
-            Date date = eventList.get(i).get(0).getDate("startDate");
-            long dayTime = date.getTime()/(1000*60*60*24);
-            positionMap.put(dayTime, i);
-
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(date);
-            reversePositionMap.put(i, cal);
-        }
     }
+
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         // each data item is just a string in this case
@@ -62,6 +54,8 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
 
         }
     }
+
+
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
