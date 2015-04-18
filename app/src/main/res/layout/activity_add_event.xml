@@ -175,6 +175,32 @@
 
         <LinearLayout
             android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="15dp"
+            android:paddingBottom="15dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/event_notify_others_option"
+                android:id="@+id/textView17"
+                android:layout_marginRight="15dp"
+                />
+            <Switch
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/eventNotifyOtherSwitch"
+                android:textOn="notify others"
+                android:textOff="not notify others"
+                android:checked="false"
+                />
+
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:paddingTop="15dp"
@@ -188,6 +214,20 @@
                 android:id="@+id/addEvent"
                 android:onClick="addEvent"/>
         </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="15dp"
+            android:paddingBottom="15dp">
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/delete_event_BT"
+                android:background="#c8c20200"
+                android:id="@+id/deleteEvent"
+                android:onClick="deleteEvent"
+                android:visibility="invisible"/>
+            </LinearLayout>
 
     </LinearLayout>
 

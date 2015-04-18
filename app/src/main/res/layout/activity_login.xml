@@ -29,7 +29,8 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:id="@+id/loginEmailET"
-            android:hint="@string/email_ET_hint" />
+            android:hint="@string/email_ET_hint"
+            android:inputType="textEmailAddress"/>
 
     </LinearLayout>
 

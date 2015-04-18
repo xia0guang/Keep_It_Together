@@ -13,8 +13,10 @@ import android.widget.Toast;
 
 import com.parse.FindCallback;
 import com.parse.ParseException;
+import com.parse.ParseInstallation;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
+import com.parse.ParseUser;
 import com.prolificinteractive.materialcalendarview.CalendarDay;
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
 import com.prolificinteractive.materialcalendarview.OnDateChangedListener;
@@ -23,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 
@@ -33,6 +36,14 @@ public class MainActivity extends ActionBarActivity {
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mLayoutManager;
     private MaterialCalendarView calendarView;
+    private List<List<Event>> eventList;
+    private HashMap<Long, Integer> positionMap;
+    private HashMap<Integer, Calendar> reversePositionMap;
+    private HashMap<String, Event> eventMap;
+
+    public static final int ADD_NEW_EVENT = 0;
+    public static final int CHANGE_EVENT = 1;
+    public static final int SETTING = 2;
 
 /*TODO 1. change notification
     2. RecyclerView mess up;
@@ -47,6 +58,19 @@ public class MainActivity extends ActionBarActivity {
         userPref = getSharedPreferences("User_Preferences", MODE_PRIVATE);
 
 
+        //handle push register
+        ParseInstallation parseInstallation = ParseInstallation.getCurrentInstallation();
+        parseInstallation.put("user", ParseUser.getCurrentUser());
+        parseInstallation.put("memberName", getSharedPreferences("User_Preferences", MODE_PRIVATE).getString("memberName", "noValue"));
+        parseInstallation.saveInBackground();
+
+
+        eventList = ((MyApplication) getApplication()).eventList;
+        positionMap = ((MyApplication) getApplication()).positionMap;
+        reversePositionMap = ((MyApplication) getApplication()).reversePositionMap;
+        eventMap = ((MyApplication) getApplication()).eventMap;
+
+
 
         mRecyclerView = (RecyclerView) findViewById(R.id.recycleView);
 //        mRecyclerView.setHasFixedSize(true);
@@ -55,7 +79,7 @@ public class MainActivity extends ActionBarActivity {
         mLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLayoutManager);
         //setAdapter
-        List<List<ParseObject>> eventList = ((MyApplication) getApplication()).eventList;
+
         mAdapter = new EventAdapter(MainActivity.this, eventList, userPref);
         mRecyclerView.setAdapter(mAdapter);
 
@@ -66,8 +90,9 @@ public class MainActivity extends ActionBarActivity {
         calendarView.setSelectedDate(today);
 
 
+
         //implement calendar view date changed listener
-        calendarView.setOnDateChangedListener(new OnDateChangedListener() {
+        /*calendarView.setOnDateChangedListener(new OnDateChangedListener() {
             @Override
             public void onDateChanged(MaterialCalendarView materialCalendarView, CalendarDay calendarDay) {
                 EventAdapter eventAdapter = (EventAdapter) mRecyclerView.getAdapter();
@@ -79,7 +104,7 @@ public class MainActivity extends ActionBarActivity {
                     }
                 });
             }
-        });
+        });*/
 
         //implement date change based on recycler view scrolling
         mRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -94,7 +119,7 @@ public class MainActivity extends ActionBarActivity {
                 super.onScrolled(recyclerView, dx, dy);
                 LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
                 int position = layoutManager.findFirstVisibleItemPosition();
-                Calendar cal = ((EventAdapter) recyclerView.getAdapter()).getCalendarByPosition(position);
+                Calendar cal = ((MyApplication)getApplication()).getCalendarByPosition(position);
                 calendarView.setSelectedDate(cal);
             }
         });
@@ -104,40 +129,50 @@ public class MainActivity extends ActionBarActivity {
         storeColorPref();
     }
     private void queryEventData() {
-        ParseQuery<ParseObject> query = ParseQuery.getQuery("Event");
+        ParseQuery<Event> query = ParseQuery.getQuery(Event.class);
         query.orderByAscending("startDate");
-        query.findInBackground(new FindCallback<ParseObject>() {
-            public void done(List<ParseObject> list, ParseException e) {
+        query.findInBackground(new FindCallback<Event>() {
+            public void done(List<Event> list, ParseException e) {
                 if (e == null && list.size() > 0) {
 
                     Toast.makeText(MainActivity.this, "query is done", Toast.LENGTH_SHORT).show();
-                    List<List<ParseObject>> eventList = ((MyApplication)getApplication()).eventList;
 
                     //put query result into evetnList
-                    eventList.add(new ArrayList<ParseObject>(Arrays.asList(list.get(0))));
+                    eventList.add(new ArrayList<Event>(Arrays.asList(list.get(0))));
+                    eventMap.put(list.get(0).getObjectId(), list.get(0));
+
                     for (int i = 1; i < list.size(); i++) {
-                        List<ParseObject> l = eventList.get(eventList.size()-1);
-                        ParseObject preObj = l.get(l.size()-1);
-                        ParseObject curObj = list.get(i);
-                        Calendar preDate = Calendar.getInstance();
-                        preDate.setTime(preObj.getDate("startDate"));
-                        Calendar curDate = Calendar.getInstance();
-                        curDate.setTime(curObj.getDate("startDate"));
+                        Event curObj = list.get(i);
+                        Log.d("start time: ", String.format("%tD  %tl:%tM %tp", curObj.getStartCal(), curObj.getStartCal(), curObj.getStartCal(), curObj.getStartCal()));
+                        Log.d("end time: ", String.format("%tD  %tl:%tM %tp", curObj.getEndCal(), curObj.getEndCal(), curObj.getEndCal(), curObj.getEndCal()));
+                        Log.d("title: ", curObj.getTitle());
+                        Log.d("member name: ", curObj.getMemberName());
+                        Log.d("==", "=================");
+
+
+                        eventMap.put(curObj.getObjectId(), curObj);
+
+                        List<Event> l = eventList.get(eventList.size()-1);
+                        Event preObj = l.get(l.size()-1);
+
+                        Calendar preDate = preObj.getStartCal();
+                        Calendar curDate = curObj.getStartCal();
+
                         if(preDate.get(Calendar.DAY_OF_MONTH) == curDate.get(Calendar.DAY_OF_MONTH)) {
                             l.add(curObj);
                         } else {
-                            eventList.add(new ArrayList<ParseObject>(Arrays.asList(curObj)));
+                            eventList.add(new ArrayList<Event>(Arrays.asList(curObj)));
                         }
                     }
 
+                    Log.d("==", "========end of query=========");
+
                     //create mAdapter positionMap and reversePositionMap
                     for (int i = 0; i <eventList.size(); i++) {
-                        Date date = eventList.get(i).get(0).getDate("startDate");
-                        long dayTime = date.getTime()/(1000*60*60*24);
-                        mAdapter.positionMap.put(dayTime, i);
-                        Calendar cal = Calendar.getInstance();
-                        cal.setTime(date);
-                        mAdapter.reversePositionMap.put(i, cal);
+                        Calendar cal = eventList.get(i).get(0).getStartCal();
+                        long day = (cal.get(Calendar.YEAR) - 1970)*366 + cal.get(Calendar.MONTH) * 31 + cal.get(Calendar.DAY_OF_MONTH);
+                        positionMap.put(day, i);
+                        reversePositionMap.put(i, cal);
                     }
 
                     mAdapter.notifyDataSetChanged();
@@ -175,9 +210,9 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        Toast.makeText(this, "I am changing", Toast.LENGTH_SHORT).show();
 
-        mRecyclerView.setAdapter(mAdapter);
+        mAdapter.notifyDataSetChanged();
+        Toast.makeText(this, "I am changing", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -197,14 +232,40 @@ public class MainActivity extends ActionBarActivity {
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             Intent settingIntent = new Intent(this, SettingActivity.class);
-            startActivity(settingIntent);
+            startActivityForResult(settingIntent, SETTING);
             return true;
         }
         if (id == R.id.action_add_new_event) {
             Intent addEventIntent = new Intent(this, AddEventActivity.class);
-            startActivity(addEventIntent);
+            startActivityForResult(addEventIntent, ADD_NEW_EVENT);
             return true;
         }
+        if (id == R.id.action_today) {
+            Intent intent = new Intent(this, UpcomingEventsActivity.class);
+            startActivity(intent);
+            return true;
+        }
+
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode == ADD_NEW_EVENT && resultCode==RESULT_OK){
+            if(data.hasExtra("changedPosition") ){
+                mAdapter.notifyItemInserted(data.getIntExtra("changedPosition", 0));
+                Toast.makeText(this, "change event completed", Toast.LENGTH_SHORT).show();
+            }
+        } else if(requestCode == CHANGE_EVENT && resultCode==RESULT_OK){
+            if(data.hasExtra("changedPosition") ){
+                mAdapter.notifyItemChanged(data.getIntExtra("changedPosition", 0));
+                Toast.makeText(this, "delete event completed", Toast.LENGTH_SHORT).show();
+            }
+        } else if(requestCode == SETTING && resultCode==RESULT_OK) {
+            if(data.hasExtra("colorChanged")) {
+                mAdapter.notifyItemRangeChanged(0, eventList.size());
+                Toast.makeText(this, "color setting changed", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 }

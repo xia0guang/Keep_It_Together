@@ -10,18 +10,32 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import com.parse.GetCallback;
 import com.parse.ParseACL;
 import com.parse.ParseException;
+import com.parse.ParseInstallation;
 import com.parse.ParseObject;
+import com.parse.ParsePush;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
 
 
 public class AddEventActivity extends Activity implements DatePickerFragment.OnDateSetListener, TimePickerFragment.OnTimeSetListener {
@@ -42,6 +56,13 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
     private EditText titleView;
     private EditText noteView;
     private Spinner alertTimeSpinner;
+    private Switch notifyOtherSwitch;
+
+    private List<List<Event>> eventList;
+    private HashMap<String, Event> eventMap;
+
+    private boolean notifyOther = false;
+    private int returnDayPosition = 0;
 
 
     @Override
@@ -50,6 +71,10 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
         setContentView(R.layout.activity_add_event);
         bundle = getIntent().getExtras();
 
+        eventList = ((MyApplication)getApplication()).eventList;
+        eventMap = ((MyApplication)getApplication()).eventMap;
+
+
         userPref = getSharedPreferences("User_Preferences", MODE_PRIVATE);
         startDateView = (TextView)findViewById(R.id.eventStartDate);
         startTimeView = (TextView)findViewById(R.id.eventStartTime);
@@ -57,6 +82,21 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
         endTimeView = (TextView)findViewById(R.id.eventEndTime);
         titleView = (EditText)findViewById(R.id.eventTitleET);
         noteView = (EditText)findViewById(R.id.eventNoteET);
+        notifyOtherSwitch = (Switch)findViewById(R.id.eventNotifyOtherSwitch);
+        notifyOtherSwitch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                notifyOther = !notifyOther;
+            }
+        });
+
+
+        Button deleteEventButton = (Button)findViewById(R.id.deleteEvent);
+        if(bundle != null) {
+            deleteEventButton.setVisibility(View.VISIBLE);
+        }
+
+
 
         startCal = Calendar.getInstance();
         endCal = Calendar.getInstance();
@@ -68,6 +108,8 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
             endCal.setTimeInMillis(bundle.getLong("endDate"));
             titleView.setText(bundle.getString("title"));
             noteView.setText(bundle.getString("note"));
+
+
         }
         setEventDateView(startDateView, startCal);
         setEventTimeView(startTimeView, startCal);
@@ -84,7 +126,11 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
     public void addEvent(View view) {
         //upload event to server
 
-        uploadEvent();
+        try {
+            uploadEvent();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
         // set alert
         alertCal = (Calendar)startCal.clone();
@@ -121,34 +167,102 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
         finish();
     }
 
-    private void uploadEvent() {
+    private void uploadEvent() throws JSONException {
+        //send push notification
+
+        if (notifyOther) {
+            ParseQuery pushQuery = ParseInstallation.getQuery();
+            pushQuery.whereEqualTo("user", ParseUser.getCurrentUser());
+            String memberName = userPref.getString("memberName", "noValue");
+            pushQuery.whereNotEqualTo("memberName", memberName);
+            Log.d("memberName", memberName);
+            ParsePush push = new ParsePush();
+            push.setChannel("EventUpdate");
+            JSONObject data = new JSONObject("{\"name\": \"Vaughn\",\"newsItem\": \"Man bites dog\"}");
+            push.setData(data);
+            push.setQuery(pushQuery); // Set our Installation query
+            if (bundle == null) {
+                push.setMessage(memberName + "just added a new Event:" + titleView.getText().toString());
+            } else {
+                push.setMessage(memberName + "just changed a new Event:" + titleView.getText().toString());
+            }
+            push.sendInBackground();
+        }
+
+        Event event;
         if (bundle == null) {
-            ParseObject event = new ParseObject("Event");
+            //upload to server
+            event = new Event();
             event.put("memberName", userPref.getString("memberName", "noValue"));
             event.put("title", titleView.getText().toString());
-            event.put("startDate", startCal.getTime());
-            event.put("endDate", endCal.getTime());
+            event.setStartDate(startCal);
+            event.setEndDate(endCal);
             event.put("note", noteView.getText().toString());
             event.setACL(new ParseACL(ParseUser.getCurrentUser()));
             event.saveEventually();
+
+
+            //add local
+
+
         } else {
-            ParseQuery<ParseObject> query = ParseQuery.getQuery("Event");
-            query.getInBackground(bundle.getString("objectID"), new GetCallback<ParseObject>() {
+            //change in server
+
+            ParseQuery<Event> query = ParseQuery.getQuery(Event.class);
+            query.getInBackground(bundle.getString("objectID"), new GetCallback<Event>() {
                 @Override
-                public void done(ParseObject event, ParseException e) {
+                public void done(Event event, ParseException e) {
                     if (e == null) {
-                        event.put("title", titleView.getText().toString());
-                        event.put("startDate", startCal.getTime());
-                        event.put("endDate", endCal.getTime());
-                        event.put("note", noteView.getText().toString());
+                        event.setTitle(titleView.getText().toString());
+                        event.setStartDate(startCal);
+                        event.setEndDate(endCal);
+                        event.setNote(noteView.getText().toString());
                         event.saveEventually();
                     } else {
                         Log.d("Query", "Error: " + e.getMessage());
-                        Log.d("ObjectId: ", bundle.getString("onjectID"));
+                        Log.d("ObjectId: ", bundle.getString("objectID"));
                     }
                 }
             });
+
+            //change locally
+            String objectID = bundle.getString("objectID");
+            event = eventMap.get(objectID);
+            int originalDayPosition = ((MyApplication)getApplication()).getPosition(event.getStartCal());
+            List<Event> eventDayList = eventList.get(originalDayPosition);
+            eventDayList.remove(event);
+            if(eventDayList.size() == 0) eventList.remove(eventDayList);
+
+            event.setTitle(titleView.getText().toString());
+            event.setStartDate(startCal);
+            event.setEndDate(endCal);
+            event.setNote(noteView.getText().toString());
+
         }
+
+        int dayPosition = ((MyApplication)getApplication()).getPosition(startCal);
+        if (dayPosition >= 0) {
+            List<Event> eventDayList = eventList.get(dayPosition);
+            eventDayList.add(event);
+            Collections.sort(eventDayList, new Comparator<Event>() {
+                @Override
+                public int compare(Event lhs, Event rhs) {
+                    return (int)lhs.getStartCal().getTimeInMillis() - (int)rhs.getStartCal().getTimeInMillis();
+                }
+            });
+        } else {
+            eventList.add(new ArrayList<Event>(Arrays.asList(event)));
+            Collections.sort(eventList, new Comparator<List<Event>>() {
+                @Override
+                public int compare(List<Event> lhs, List<Event> rhs) {
+                    return (int)lhs.get(0).getStartCal().getTimeInMillis() - (int)rhs.get(0).getStartCal().getTimeInMillis();
+                }
+            });
+        }
+
+        returnDayPosition = dayPosition;
+
+        Log.d("","");
     }
 
     private void setEventDateView(TextView dateView, Calendar cal) {
@@ -179,6 +293,33 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
     public void setEventEndTime(View view) {
         DialogFragment frag = TimePickerFragment.getInstance(endCal.getTimeInMillis(), false);
         frag.show(getFragmentManager(), "endTimeFrag");
+    }
+
+    public void deleteEvent(View view) {
+        ParseQuery<Event> query = ParseQuery.getQuery(Event.class);
+        query.getInBackground(bundle.getString("objectID"), new GetCallback<Event>() {
+            @Override
+            public void done(Event event, ParseException e) {
+                if (e == null) {
+                    event.deleteEventually();
+                } else {
+                    Log.d("Query", "Error: " + e.getMessage());
+                    Log.d("ObjectId: ", bundle.getString("objectID"));
+                }
+            }
+        });
+
+
+        String objectID = bundle.getString("objectID");
+        Event event = eventMap.get(objectID);
+        int originalDayPosition = ((MyApplication)getApplication()).getPosition(event.getStartCal());
+        List<Event> eventDayList = eventList.get(originalDayPosition);
+        eventDayList.remove(event);
+        if(eventDayList.size() == 0) eventList.remove(eventDayList);
+
+        returnDayPosition = originalDayPosition;
+
+        finish();
     }
 
     @Override
@@ -214,5 +355,15 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
             endCal = cal;
             setEventTimeView(endTimeView, endCal);
         }
+    }
+
+    @Override
+    public void finish() {
+        //TODO add name prefix
+        Intent data = new Intent();
+        data.putExtra("changedPosition", returnDayPosition);
+        // Activity finished ok, return the data
+        setResult(RESULT_OK, data);
+        super.finish();
     }
 }

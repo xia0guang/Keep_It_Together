@@ -1,15 +1,12 @@
 package com.xg.keepittogether;
 
 import android.app.Activity;
-import android.app.usage.UsageEvents;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -28,8 +25,8 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
 
 
     private SharedPreferences userPref;
-    private Spinner spinner;
     private ArrayList<String> allColor;
+    private boolean colorChanged = false;
 
 
     @Override
@@ -55,8 +52,7 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
     }
 
     public void signOut(View view) {
-        ParseUser user = ParseUser.getCurrentUser();
-        user.logOut();
+        ParseUser.logOut();
         Intent intent = new Intent(this, LoginActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
@@ -67,7 +63,7 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
         final int itemPosition = position;
         SharedPreferences.Editor edit = userPref.edit();
         edit.putInt("color", position);
-        edit.commit();
+        edit.apply();
 
         ParseQuery<ParseObject> query = ParseQuery.getQuery("Members");
         query.whereEqualTo("memberName", userPref.getString("memberName","noValue"));
@@ -79,10 +75,21 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
                 member.saveInBackground();
             }
         });
+        colorChanged = true;
     }
 
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
 
+    }
+
+    @Override
+    public void finish() {
+        if (colorChanged) {
+            Intent data = new Intent();
+            data.putExtra("colorChanged", true);
+            setResult(RESULT_OK, data);
+        }
+        super.finish();
     }
 }
