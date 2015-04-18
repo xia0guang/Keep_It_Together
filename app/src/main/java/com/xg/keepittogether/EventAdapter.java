@@ -13,10 +13,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.parse.ParseObject;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -28,31 +30,49 @@ import java.util.List;
  */
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> {
 
-    List<List<ParseObject>> eventList;
-    HashMap<Long, Integer> positionMap;
-    HashMap<Integer, Calendar> reversePositionMap;
+    List<List<Event>> eventList;
+
     Context context;
     SharedPreferences userPref;
 
-    EventAdapter(Context context, List<List<ParseObject>> eventList, SharedPreferences userPref) {
+    EventAdapter(Context context, List<List<Event>> eventList, SharedPreferences userPref) {
         this.eventList = eventList;
         this.context = context;
         this.userPref = userPref;
-        positionMap = new HashMap<>();
-        reversePositionMap = new HashMap<>();
+
     }
 
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         // each data item is just a string in this case
         private ViewGroup rowViewGroup;
-        int rows;
+        private TextView startDateView;
+        private List<SubViewHolder> elementHolderList;
         public ViewHolder(View view) {
             super(view);
-            rows = 0;
+            startDateView = (TextView)view.findViewById(R.id.eventStartTimeInRow);
             rowViewGroup = (ViewGroup)view.findViewById(R.id.rowView);
-
+            elementHolderList = new ArrayList<>();
         }
+
+        public void addElement(View view) {
+            rowViewGroup.addView(view);
+        }
+    }
+
+    public static class SubViewHolder extends RecyclerView.ViewHolder {
+
+        private TextView startTimeView, endView, titleView, memberNameView;
+        private ViewGroup elementView;
+        public SubViewHolder(View view) {
+            super(view);
+            startTimeView = (TextView)view.findViewById(R.id.eventStartTimeInElement);
+            endView = (TextView)view.findViewById(R.id.eventEndTimeInElement);
+            titleView = (TextView)view.findViewById(R.id.eventTitleInElement);
+            memberNameView = (TextView)view.findViewById(R.id.memberNameInElement);
+            elementView = (ViewGroup)view.findViewById(R.id.elementView);
+        }
+
     }
 
 
@@ -61,81 +81,72 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.row, parent, false);
         ViewHolder vh = new ViewHolder(v);
+
+
+        for (int i = 0; i < viewType; i++) {
+            Drawable divider = context.getResources().getDrawable(R.drawable.divider);
+            ImageView dividerView = new ImageView(context);
+            dividerView.setImageDrawable(divider);
+            vh.addElement(dividerView);
+
+            View element = LayoutInflater.from(context).inflate(R.layout.element, vh.rowViewGroup, false);
+            vh.addElement(element);
+            SubViewHolder elementHolder = new SubViewHolder(element);
+            vh.elementHolderList.add(elementHolder);
+        }
         return vh;
     }
 
     @Override
+    public int getItemViewType(int position) {
+        return eventList.get(position).size();
+    }
+
+    @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        List<ParseObject> list = eventList.get(position);
-        if (holder.rows < list.size()) {
-            holder.rowViewGroup.removeAllViews();
-            holder.rows = 0;
+        List<Event> list = eventList.get(position);
 
+        Event headEvent = list.get(0);
+        Calendar startCal = headEvent.getStartCal();
+        holder.startDateView.setText(String.format("%tD", startCal));
 
-            ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            TextView startView = new TextView(context);
-            startView.setLayoutParams(layoutParams);
-            Calendar startCal = Calendar.getInstance();
-            startCal.setTime(list.get(0).getDate("startDate"));
-            startView.setText(String.format("%tD", startCal));
-            holder.rowViewGroup.addView(startView);
+        for (int i = 0; i < list.size(); i++) {
+            final Event event = list.get(i);
+            Calendar startTimeCal = event.getStartCal();
+            holder.elementHolderList.get(i).startTimeView.setText(String.format("%tl:%tM %tp", startTimeCal, startTimeCal, startTimeCal));
+            Calendar endCal = event.getEndCal();
+            holder.elementHolderList.get(i).endView.setText(String.format("%tD  %tl:%tM %tp", endCal, endCal, endCal, endCal));
+            holder.elementHolderList.get(i).titleView.setText(event.getTitle());
+            holder.elementHolderList.get(i).memberNameView.setText("@" + event.getMemberName());
+            holder.elementHolderList.get(i).memberNameView.setBackgroundColor(EventColor.getColor(userPref.getInt("color." + event.getString("memberName"), 1)));
 
-            for (final ParseObject parseObject : list) {
-                View element = LayoutInflater.from(context).inflate(R.layout.element, null);
-                //start time view
-                TextView startTimeView = (TextView)element.findViewById(R.id.eventStartTimeInElement);
-                Calendar startTimeCal = Calendar.getInstance();
-                startTimeCal.setTime(parseObject.getDate("startDate"));
-                startTimeView.setText(String.format("%tl:%tM %tp", startTimeCal, startTimeCal, startTimeCal));
-                //end date time view
-                TextView endView = (TextView)element.findViewById(R.id.eventEndTimeInElement);
-                Calendar endCal = Calendar.getInstance();
-                endCal.setTime(parseObject.getDate("endDate"));
-                endView.setText(String.format("%tD  %tl:%tM %tp", endCal, endCal, endCal, endCal));
-                //title view
-                TextView title = (TextView)element.findViewById(R.id.eventTitleInElement);
-                title.setText(parseObject.getString("title"));
-                //member name
-                TextView memberName = (TextView)element.findViewById(R.id.memberNameInElement);
-                memberName.setText("@" + parseObject.getString("memberName"));
+//            Log.d("start time: ", String.format("%tD  %tl:%tM %tp", startTimeCal, startTimeCal, startTimeCal, startTimeCal));
+//            Log.d("end time: ", String.format("%tD  %tl:%tM %tp", endCal, endCal, endCal, endCal));
+//            Log.d("title: ", event.getTitle());
+//            Log.d("member name: ", event.getMemberName());
 
-                memberName.setBackgroundColor(EventColor.getColor(userPref.getInt("color." + parseObject.getString("memberName"), 1)));
-                //add element to row
+            if (event.getMemberName().equals(userPref.getString("memberName", "noValue"))) {
 
-                Drawable divider = context.getResources().getDrawable(R.drawable.divider);
-                ImageView dividerView = new ImageView(context);
-                dividerView.setImageDrawable(divider);
-                holder.rowViewGroup.addView(dividerView);
-                holder.rowViewGroup.addView(element);
-                holder.rows++;
+                holder.elementHolderList.get(i).elementView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent intent = new Intent(context, AddEventActivity.class);
+                        Bundle bundle = new Bundle();
+                        bundle.putString("title", event.getTitle());
+                        bundle.putString("note", event.getString("note"));
+                        bundle.putLong("startDate", event.getStartCal().getTimeInMillis());
+//                            Log.d("start: ", "" + event.getDate("startDate").getTime());
 
+                        bundle.putLong("endDate", event.getEndCal().getTimeInMillis());
+//                            Log.d("start: ", "" + event.getDate("endDate").getTime());
 
-//                Log.d("local:", parseObject.getString("memberName"));
-//                Log.d("remote:", userPref.getString("memberName", "noValue"));
-                if (parseObject.getString("memberName").equals(userPref.getString("memberName", "noValue"))) {
-
-                    element.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            Intent intent = new Intent(context, AddEventActivity.class);
-                            Bundle bundle = new Bundle();
-                            bundle.putString("title", parseObject.getString("title"));
-                            bundle.putString("note", parseObject.getString("note"));
-                            bundle.putLong("startDate", parseObject.getDate("startDate").getTime());
-                            Log.d("start: ", "" + parseObject.getDate("startDate").getTime());
-
-                            bundle.putLong("endDate", parseObject.getDate("endDate").getTime());
-                            Log.d("start: ", "" + parseObject.getDate("endDate").getTime());
-
-                            bundle.putString("objectID", parseObject.getObjectId());
-                            intent.putExtras(bundle);
-                            context.startActivity(intent);
-                        }
-                    });
-                }
+                        bundle.putString("objectID", event.getObjectId());
+                        intent.putExtras(bundle);
+                        context.startActivity(intent);
+                    }
+                });
             }
         }
-
     }
 
     @Override
@@ -143,17 +154,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
         return eventList.size();
     }
 
-    public int getPosition(Calendar cal) {
-        long dayTime = cal.getTimeInMillis()/(1000*60*60*24);
-        if(positionMap.get(dayTime) != null) return positionMap.get(dayTime);
-        else return -1;
-    }
 
-    public Calendar getCalendarByPosition(int position) {
-        if(position >= 0 && position < getItemCount()) {
-            return reversePositionMap.get(position);
-        }
-        return null;
-    }
 
 }

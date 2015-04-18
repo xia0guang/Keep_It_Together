@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Keep It Together</string>
+    <string name="app_name">Keep Together</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_setting">SettingActivity</string>
@@ -12,7 +12,8 @@
     <string name="event_TV">Event:</string>
     <string name="add_new_event_BT">Save</string>
     <string name="color_TV">Color:</string>
-    <string name="title_activity_login">LoginActivity</string>
+     <string name="title_activity_login">LoginActivity</string>
+    <!--<string name="title_activity_login">Keep Together</string>-->
     <string name="login_email_TV">Email:</string>
     <string name="login_password_TV">Password:</string>
     <string name="sign_up_BT">Sign up</string>
@@ -51,5 +52,8 @@
     <string name="event_note_TV">Note:</string>
     <string name="event_note_hint">Enter event note</string>
     <string name="title_activity_edit_event">EditEventActivity</string>
+    <string name="delete_event_BT">Delete</string>
+    <string name="event_notify_others_option">Notify other members:</string>
+    <string name="title_activity_dispatch">Keep Together</string>
 
 </resources>

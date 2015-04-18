@@ -56,11 +56,11 @@ public class SelectMemberNameFragment extends Fragment {
         query.findInBackground(new FindCallback<ParseObject>() {
             public void done(List<ParseObject> list, ParseException e) {
                 if (e == null) {
-                    List<String> memberNameList = new ArrayList<String>();
+                    List<String> memberNameList = new ArrayList<>();
                     for(ParseObject po : list) {
                         memberNameList.add(po.getString("memberName"));
                     }
-                    ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getActivity(),android.R.layout.simple_spinner_dropdown_item, memberNameList);
+                    ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(getActivity(),android.R.layout.simple_spinner_dropdown_item, memberNameList);
                     Spinner spinner = (Spinner) getActivity().findViewById(R.id.memberNameSpinner);
                     spinner.setAdapter(arrayAdapter);
                 } else {
@@ -92,7 +92,7 @@ public class SelectMemberNameFragment extends Fragment {
                         }
                     });
 
-                    editor.commit();
+                    editor.apply();
                 } else {
                     //Store member name in Members Table
                     ParseObject member = new ParseObject("Members");
@@ -105,10 +105,11 @@ public class SelectMemberNameFragment extends Fragment {
                     //Set member name in preferences file
                     editor.putString("memberName", memberNameView.getText().toString());
                     editor.putInt("color", EventColor.BLUE);
-                    editor.commit();
+                    editor.apply();
                 }
 
-                Intent intent = new Intent(getActivity(), DispatchActivity.class);
+                Intent intent = new Intent(getActivity(), MainActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
             }
         });

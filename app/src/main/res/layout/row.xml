@@ -12,8 +12,7 @@
         android:layout_height="wrap_content"
         card_view:cardCornerRadius="0dp"
         card_view:cardElevation="2sp"
-        card_view:cardUseCompatPadding="true"
-        >
+        card_view:cardUseCompatPadding="true">
 
         <LinearLayout
             android:orientation="vertical"
@@ -26,8 +25,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/eventStartTimeInRow"
-                />
+                android:id="@+id/eventStartTimeInRow"/>
 
             </LinearLayout>
 
