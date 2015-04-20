@@ -64,10 +64,6 @@
             android:label="@string/title_activity_sign_up"
             android:screenOrientation="portrait" >
         </activity>
-        <activity
-            android:name=".UpcomingEventsActivity"
-            android:label="Calendar API Android Quickstart" >
-        </activity>
 
         <receiver android:name=".AlertBroadcastReceiver" />
 

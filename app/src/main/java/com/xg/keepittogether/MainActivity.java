@@ -17,14 +17,11 @@ import com.parse.ParseInstallation;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
-import com.prolificinteractive.materialcalendarview.CalendarDay;
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
-import com.prolificinteractive.materialcalendarview.OnDateChangedListener;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -41,9 +38,9 @@ public class MainActivity extends ActionBarActivity {
     private HashMap<Integer, Calendar> reversePositionMap;
     private HashMap<String, Event> eventMap;
 
-    public static final int ADD_NEW_EVENT = 0;
-    public static final int CHANGE_EVENT = 1;
-    public static final int SETTING = 2;
+    public static final int REQUEST_ADD_NEW_EVENT = 0;
+    public static final int REQUEST_CHANGE_EVENT = 1;
+    public static final int REQUEST_SETTING = 2;
 
 /*TODO 1. change notification
     2. RecyclerView mess up;
@@ -143,15 +140,7 @@ public class MainActivity extends ActionBarActivity {
 
                     for (int i = 1; i < list.size(); i++) {
                         Event curObj = list.get(i);
-                        Log.d("start time: ", String.format("%tD  %tl:%tM %tp", curObj.getStartCal(), curObj.getStartCal(), curObj.getStartCal(), curObj.getStartCal()));
-                        Log.d("end time: ", String.format("%tD  %tl:%tM %tp", curObj.getEndCal(), curObj.getEndCal(), curObj.getEndCal(), curObj.getEndCal()));
-                        Log.d("title: ", curObj.getTitle());
-                        Log.d("member name: ", curObj.getMemberName());
-                        Log.d("==", "=================");
-
-
                         eventMap.put(curObj.getObjectId(), curObj);
-
                         List<Event> l = eventList.get(eventList.size()-1);
                         Event preObj = l.get(l.size()-1);
 
@@ -232,17 +221,15 @@ public class MainActivity extends ActionBarActivity {
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             Intent settingIntent = new Intent(this, SettingActivity.class);
-            startActivityForResult(settingIntent, SETTING);
+            startActivityForResult(settingIntent, REQUEST_SETTING);
             return true;
         }
         if (id == R.id.action_add_new_event) {
             Intent addEventIntent = new Intent(this, AddEventActivity.class);
-            startActivityForResult(addEventIntent, ADD_NEW_EVENT);
+            startActivityForResult(addEventIntent, REQUEST_ADD_NEW_EVENT);
             return true;
         }
         if (id == R.id.action_today) {
-            Intent intent = new Intent(this, UpcomingEventsActivity.class);
-            startActivity(intent);
             return true;
         }
 
@@ -251,17 +238,17 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(requestCode == ADD_NEW_EVENT && resultCode==RESULT_OK){
+        if(requestCode == REQUEST_ADD_NEW_EVENT && resultCode==RESULT_OK){
             if(data.hasExtra("changedPosition") ){
                 mAdapter.notifyItemInserted(data.getIntExtra("changedPosition", 0));
                 Toast.makeText(this, "change event completed", Toast.LENGTH_SHORT).show();
             }
-        } else if(requestCode == CHANGE_EVENT && resultCode==RESULT_OK){
+        } else if(requestCode == REQUEST_CHANGE_EVENT && resultCode==RESULT_OK){
             if(data.hasExtra("changedPosition") ){
                 mAdapter.notifyItemChanged(data.getIntExtra("changedPosition", 0));
                 Toast.makeText(this, "delete event completed", Toast.LENGTH_SHORT).show();
             }
-        } else if(requestCode == SETTING && resultCode==RESULT_OK) {
+        } else if(requestCode == REQUEST_SETTING && resultCode==RESULT_OK) {
             if(data.hasExtra("colorChanged")) {
                 mAdapter.notifyItemRangeChanged(0, eventList.size());
                 Toast.makeText(this, "color setting changed", Toast.LENGTH_SHORT).show();

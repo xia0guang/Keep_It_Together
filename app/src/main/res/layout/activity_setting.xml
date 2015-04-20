@@ -14,70 +14,90 @@
         android:id="@+id/linearLayout"
         android:gravity="center_horizontal"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true">
+        android:layout_alignParentEnd="true"
+        android:divider="@drawable/divider"
+        android:showDividers="middle">
 
         <LinearLayout
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:paddingTop="50dp">
+            android:paddingTop="30dp">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/setting_family_acount_TV"
-                android:id="@+id/textView3"
-                android:layout_weight="2" />
+                android:id="@+id/textView3"/>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:id="@+id/familyAcountTV"
-                android:layout_weight="1" />
+                android:id="@+id/familyAcountTV"/>
 
         </LinearLayout>
 
         <LinearLayout
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:paddingTop="50dp"
+            android:paddingTop="30dp"
             android:gravity="center_horizontal">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/setting_member_name_TV"
-                android:id="@+id/textView13"
-                android:layout_weight="2" />
+                android:id="@+id/textView13"/>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:id="@+id/memberNameTV"
-                android:layout_weight="1" />
+                android:id="@+id/memberNameTV"/>
         </LinearLayout>
 
         <LinearLayout
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:paddingTop="50dp">
+            android:paddingTop="30dp"
+            android:gravity="center_horizontal">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/google_calendar_setting_TV"
+                android:id="@+id/textView14"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:text="@string/setting_google_calendar_hint"
+                android:id="@+id/googleCalendarSetting"
+                android:textSize="@dimen/setting_google_calendar_hint_size"
+                android:clickable="true"
+                android:onClick="setCalendar"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:paddingTop="30dp">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/setting_color_TV"
-                android:id="@+id/textView15"
-                android:layout_weight="2" />
+                android:id="@+id/textView15"/>
 
             <Spinner
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/colorSpinner"
-                android:layout_weight="1" />
+                android:id="@+id/colorSpinner"/>
         </LinearLayout>
 
         <LinearLayout

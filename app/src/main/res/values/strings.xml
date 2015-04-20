@@ -55,5 +55,10 @@
     <string name="delete_event_BT">Delete</string>
     <string name="event_notify_others_option">Notify other members:</string>
     <string name="title_activity_dispatch">Keep Together</string>
+    <string name="google_calendar_setting_TV">Google Calendar:</string>
+    <string name="setting_google_calendar_hint">Tap to set Google Calendar</string>
+    <string name="select_calendar_list_dialog_title">Select Calendars</string>
+    <string name="ok">Save</string>
+    <string name="cancel">Cancel</string>
 
 </resources>

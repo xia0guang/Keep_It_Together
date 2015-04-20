@@ -57,7 +57,7 @@ public class LoginActivity extends Activity {
         }
 
         // Set up a progress dialog
-        final ProgressDialog dlg = new ProgressDialog(LoginActivity.this);
+        final ProgressDialog dlg = new ProgressDialog(this);
         dlg.setTitle("Please wait.");
         dlg.setMessage("Logging in.  Please wait.");
         dlg.show();
