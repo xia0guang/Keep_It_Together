@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,12 +22,12 @@ import java.util.List;
  */
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> {
 
-    List<List<Event>> eventList;
+    List<List<ParseEvent>> eventList;
 
     Context context;
     SharedPreferences userPref;
 
-    EventAdapter(Context context, List<List<Event>> eventList, SharedPreferences userPref) {
+    EventAdapter(Context context, List<List<ParseEvent>> eventList, SharedPreferences userPref) {
         this.eventList = eventList;
         this.context = context;
         this.userPref = userPref;
@@ -95,43 +96,45 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        List<Event> list = eventList.get(position);
+        List<ParseEvent> list = eventList.get(position);
 
-        Event headEvent = list.get(0);
-        Calendar startCal = headEvent.getStartCal();
+        ParseEvent headParseEvent = list.get(0);
+        Calendar startCal = headParseEvent.getStartCal();
         holder.startDateView.setText(String.format("%tD", startCal));
 
         for (int i = 0; i < list.size(); i++) {
-            final Event event = list.get(i);
-            Calendar startTimeCal = event.getStartCal();
+            final ParseEvent parseEvent = list.get(i);
+            Calendar startTimeCal = parseEvent.getStartCal();
             holder.elementHolderList.get(i).startTimeView.setText(String.format("%tl:%tM %tp", startTimeCal, startTimeCal, startTimeCal));
-            Calendar endCal = event.getEndCal();
+            Calendar endCal = parseEvent.getEndCal();
             holder.elementHolderList.get(i).endView.setText(String.format("%tD  %tl:%tM %tp", endCal, endCal, endCal, endCal));
-            holder.elementHolderList.get(i).titleView.setText(event.getTitle());
-            holder.elementHolderList.get(i).memberNameView.setText("@" + event.getMemberName());
-            holder.elementHolderList.get(i).memberNameView.setBackgroundColor(EventColor.getColor(userPref.getInt("color." + event.getString("memberName"), 1)));
+            holder.elementHolderList.get(i).titleView.setText(parseEvent.getTitle());
+            holder.elementHolderList.get(i).memberNameView.setText("@" + parseEvent.getMemberName());
+            holder.elementHolderList.get(i).memberNameView.setBackgroundColor(EventColor.getColor(userPref.getInt("color." + parseEvent.getString("memberName"), 1)));
 
 //            Log.d("start time: ", String.format("%tD  %tl:%tM %tp", startTimeCal, startTimeCal, startTimeCal, startTimeCal));
 //            Log.d("end time: ", String.format("%tD  %tl:%tM %tp", endCal, endCal, endCal, endCal));
-//            Log.d("title: ", event.getTitle());
-//            Log.d("member name: ", event.getMemberName());
+//            Log.d("title: ", parseEvent.getTitle());
+//            Log.d("member name: ", parseEvent.getMemberName());
 
-            if (event.getMemberName().equals(userPref.getString("memberName", "noValue"))) {
+            Log.d("memberName", userPref.getString("memberName", "noValue"));
+            if (parseEvent.getMemberName().equals(userPref.getString("memberName", "noValue"))) {
+
 
                 holder.elementHolderList.get(i).elementView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         Intent intent = new Intent(context, AddEventActivity.class);
                         Bundle bundle = new Bundle();
-                        bundle.putString("title", event.getTitle());
-                        bundle.putString("note", event.getString("note"));
-                        bundle.putLong("startDate", event.getStartCal().getTimeInMillis());
-//                            Log.d("start: ", "" + event.getDate("startDate").getTime());
+                        bundle.putString("title", parseEvent.getTitle());
+                        bundle.putString("note", parseEvent.getString("note"));
+                        bundle.putLong("startDate", parseEvent.getStartCal().getTimeInMillis());
+//                            Log.d("start: ", "" + parseEvent.getDate("startDate").getTime());
 
-                        bundle.putLong("endDate", event.getEndCal().getTimeInMillis());
-//                            Log.d("start: ", "" + event.getDate("endDate").getTime());
+                        bundle.putLong("endDate", parseEvent.getEndCal().getTimeInMillis());
+//                            Log.d("start: ", "" + parseEvent.getDate("endDate").getTime());
 
-                        bundle.putString("objectID", event.getObjectId());
+                        bundle.putString("objectID", parseEvent.getObjectId());
                         intent.putExtras(bundle);
                         context.startActivity(intent);
                     }

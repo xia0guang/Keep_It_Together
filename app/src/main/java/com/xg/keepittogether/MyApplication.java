@@ -1,16 +1,13 @@
 package com.xg.keepittogether;
 
 import android.app.Application;
-import android.content.Intent;
 import android.util.Log;
 
 import com.parse.Parse;
 import com.parse.ParseCrashReporting;
 import com.parse.ParseException;
-import com.parse.ParseInstallation;
 import com.parse.ParseObject;
 import com.parse.ParsePush;
-import com.parse.ParseUser;
 import com.parse.SaveCallback;
 
 import java.util.ArrayList;
@@ -23,15 +20,15 @@ import java.util.List;
  */
 public class MyApplication extends Application {
 
-    protected List<List<Event>> eventList;
+    protected List<List<ParseEvent>> eventList;
     protected HashMap<Long, Integer> positionMap;
     protected HashMap<Integer, Calendar> reversePositionMap;
-    protected HashMap<String, Event> eventMap;
+    protected HashMap<String, ParseEvent> eventMap;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        eventList = new ArrayList<List<Event>>();
+        eventList = new ArrayList<List<ParseEvent>>();
         positionMap = new HashMap<>();
         reversePositionMap = new HashMap<>();
         eventMap = new HashMap<>();
@@ -42,7 +39,7 @@ public class MyApplication extends Application {
         // Enable Local Datastore.
         Parse.enableLocalDatastore(this);
         // Add your initialization code here
-        ParseObject.registerSubclass(Event.class);
+        ParseObject.registerSubclass(ParseEvent.class);
 
         Parse.initialize(this, getString(R.string.app_key), getString(R.string.client_key));
 //        ParseUser.enableAutomaticUser();

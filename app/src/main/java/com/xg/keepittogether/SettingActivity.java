@@ -49,10 +49,11 @@ import java.util.Arrays;
 import java.util.List;
 
 
-public class SettingActivity extends Activity implements AdapterView.OnItemSelectedListener{
+public class SettingActivity extends Activity implements AdapterView.OnItemSelectedListener, MultiChoiceListDialogFragment.MultiChoiceListDialogListener{
 
 
     private SharedPreferences userPref;
+    private SharedPreferences googlePref;
     private boolean colorChanged = false;
 
     com.google.api.services.calendar.Calendar mService;
@@ -67,7 +68,7 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
     private static final String PREF_ACCOUNT_NAME = "googleAccountName";
     private static final String[] SCOPES = {CalendarScopes.CALENDAR_READONLY};
 
-    public CharSequence[] googleCalendarList;
+    public List<String> googleCalendarList;
 
 
     @Override
@@ -77,6 +78,7 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
 
 
         userPref = getSharedPreferences("User_Preferences", MODE_PRIVATE);
+        googlePref = getSharedPreferences("Google_Calendar_List", MODE_PRIVATE);
 
 
         TextView familyEmailView = (TextView)findViewById(R.id.familyAcountTV);
@@ -104,6 +106,8 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
                 transport, jsonFactory, credential)
                 .setApplicationName("Keep Together")
                 .build();
+
+        if(googlePref.getInt("listSize", 0) > 0) onOkClicked();
 
 
     }
@@ -135,9 +139,22 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
 
     public void signOut(View view) {
         ParseUser.logOut();
+        userPref.edit().clear().apply();
+        googlePref.edit().clear().apply();
         Intent intent = new Intent(this, LoginActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
+    }
+
+    @Override
+    public void onOkClicked() {
+        TextView googleCalendarListView = (TextView)findViewById(R.id.googleCalendarSetting);
+        String calList = "";
+        int listSize = googlePref.getInt("listSize", 0);
+        for (int i = 0; i < listSize; i++) {
+            calList += googlePref.getString("calendar_" + i, "") + "\n";
+        }
+        googleCalendarListView.setText(calList);
     }
 
     private static class ColorApapter extends ArrayAdapter<String> {
@@ -145,11 +162,9 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
         LayoutInflater mInflater;
         ArrayList<String> allColor = new ArrayList<>(
                 Arrays.asList("black", "blue", "cyan", "Gray", "Green", "Magenta", "Red", "Yellow", "Orange"));
-        private Context context;
 
         public ColorApapter(Context context, int resource) {
             super(context, resource);
-            this.context = context;
             mInflater = (LayoutInflater)context.getSystemService(LAYOUT_INFLATER_SERVICE);
         }
 
@@ -290,10 +305,9 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
         dlg.dismiss();
         List<CalendarListEntry> listEntries = calendarListEntry.getItems();
         Log.d("calendar List:", listEntries.toString());
-        googleCalendarList = new CharSequence[listEntries.size()];
-
+        googleCalendarList = new ArrayList<>();
         for (int i = 0; i < listEntries.size(); i++) {
-            googleCalendarList[i] = listEntries.get(i).getSummary();
+            googleCalendarList.add(listEntries.get(i).getSummary());
         }
     }
 

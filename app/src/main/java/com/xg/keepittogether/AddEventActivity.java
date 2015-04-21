@@ -20,7 +20,6 @@ import com.parse.GetCallback;
 import com.parse.ParseACL;
 import com.parse.ParseException;
 import com.parse.ParseInstallation;
-import com.parse.ParseObject;
 import com.parse.ParsePush;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
@@ -31,7 +30,6 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -58,8 +56,8 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
     private Spinner alertTimeSpinner;
     private Switch notifyOtherSwitch;
 
-    private List<List<Event>> eventList;
-    private HashMap<String, Event> eventMap;
+    private List<List<ParseEvent>> eventList;
+    private HashMap<String, ParseEvent> eventMap;
 
     private boolean notifyOther = false;
     private int returnDayPosition = 0;
@@ -189,17 +187,17 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
             push.sendInBackground();
         }
 
-        Event event;
+        ParseEvent parseEvent;
         if (bundle == null) {
             //upload to server
-            event = new Event();
-            event.put("memberName", userPref.getString("memberName", "noValue"));
-            event.put("title", titleView.getText().toString());
-            event.setStartDate(startCal);
-            event.setEndDate(endCal);
-            event.put("note", noteView.getText().toString());
-            event.setACL(new ParseACL(ParseUser.getCurrentUser()));
-            event.saveEventually();
+            parseEvent = new ParseEvent();
+            parseEvent.put("memberName", userPref.getString("memberName", "noValue"));
+            parseEvent.put("title", titleView.getText().toString());
+            parseEvent.setStartDate(startCal);
+            parseEvent.setEndDate(endCal);
+            parseEvent.put("note", noteView.getText().toString());
+            parseEvent.setACL(new ParseACL(ParseUser.getCurrentUser()));
+            parseEvent.saveEventually();
 
 
             //add local
@@ -208,16 +206,16 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
         } else {
             //change in server
 
-            ParseQuery<Event> query = ParseQuery.getQuery(Event.class);
-            query.getInBackground(bundle.getString("objectID"), new GetCallback<Event>() {
+            ParseQuery<ParseEvent> query = ParseQuery.getQuery(ParseEvent.class);
+            query.getInBackground(bundle.getString("objectID"), new GetCallback<ParseEvent>() {
                 @Override
-                public void done(Event event, ParseException e) {
+                public void done(ParseEvent parseEvent, ParseException e) {
                     if (e == null) {
-                        event.setTitle(titleView.getText().toString());
-                        event.setStartDate(startCal);
-                        event.setEndDate(endCal);
-                        event.setNote(noteView.getText().toString());
-                        event.saveEventually();
+                        parseEvent.setTitle(titleView.getText().toString());
+                        parseEvent.setStartDate(startCal);
+                        parseEvent.setEndDate(endCal);
+                        parseEvent.setNote(noteView.getText().toString());
+                        parseEvent.saveEventually();
                     } else {
                         Log.d("Query", "Error: " + e.getMessage());
                         Log.d("ObjectId: ", bundle.getString("objectID"));
@@ -227,34 +225,34 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
 
             //change locally
             String objectID = bundle.getString("objectID");
-            event = eventMap.get(objectID);
-            int originalDayPosition = ((MyApplication)getApplication()).getPosition(event.getStartCal());
-            List<Event> eventDayList = eventList.get(originalDayPosition);
-            eventDayList.remove(event);
-            if(eventDayList.size() == 0) eventList.remove(eventDayList);
+            parseEvent = eventMap.get(objectID);
+            int originalDayPosition = ((MyApplication)getApplication()).getPosition(parseEvent.getStartCal());
+            List<ParseEvent> parseEventDayList = eventList.get(originalDayPosition);
+            parseEventDayList.remove(parseEvent);
+            if(parseEventDayList.size() == 0) eventList.remove(parseEventDayList);
 
-            event.setTitle(titleView.getText().toString());
-            event.setStartDate(startCal);
-            event.setEndDate(endCal);
-            event.setNote(noteView.getText().toString());
+            parseEvent.setTitle(titleView.getText().toString());
+            parseEvent.setStartDate(startCal);
+            parseEvent.setEndDate(endCal);
+            parseEvent.setNote(noteView.getText().toString());
 
         }
 
         int dayPosition = ((MyApplication)getApplication()).getPosition(startCal);
         if (dayPosition >= 0) {
-            List<Event> eventDayList = eventList.get(dayPosition);
-            eventDayList.add(event);
-            Collections.sort(eventDayList, new Comparator<Event>() {
+            List<ParseEvent> parseEventDayList = eventList.get(dayPosition);
+            parseEventDayList.add(parseEvent);
+            Collections.sort(parseEventDayList, new Comparator<ParseEvent>() {
                 @Override
-                public int compare(Event lhs, Event rhs) {
+                public int compare(ParseEvent lhs, ParseEvent rhs) {
                     return (int)lhs.getStartCal().getTimeInMillis() - (int)rhs.getStartCal().getTimeInMillis();
                 }
             });
         } else {
-            eventList.add(new ArrayList<Event>(Arrays.asList(event)));
-            Collections.sort(eventList, new Comparator<List<Event>>() {
+            eventList.add(new ArrayList<ParseEvent>(Arrays.asList(parseEvent)));
+            Collections.sort(eventList, new Comparator<List<ParseEvent>>() {
                 @Override
-                public int compare(List<Event> lhs, List<Event> rhs) {
+                public int compare(List<ParseEvent> lhs, List<ParseEvent> rhs) {
                     return (int)lhs.get(0).getStartCal().getTimeInMillis() - (int)rhs.get(0).getStartCal().getTimeInMillis();
                 }
             });
@@ -296,12 +294,12 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
     }
 
     public void deleteEvent(View view) {
-        ParseQuery<Event> query = ParseQuery.getQuery(Event.class);
-        query.getInBackground(bundle.getString("objectID"), new GetCallback<Event>() {
+        ParseQuery<ParseEvent> query = ParseQuery.getQuery(ParseEvent.class);
+        query.getInBackground(bundle.getString("objectID"), new GetCallback<ParseEvent>() {
             @Override
-            public void done(Event event, ParseException e) {
+            public void done(ParseEvent parseEvent, ParseException e) {
                 if (e == null) {
-                    event.deleteEventually();
+                    parseEvent.deleteEventually();
                 } else {
                     Log.d("Query", "Error: " + e.getMessage());
                     Log.d("ObjectId: ", bundle.getString("objectID"));
@@ -311,11 +309,11 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
 
 
         String objectID = bundle.getString("objectID");
-        Event event = eventMap.get(objectID);
-        int originalDayPosition = ((MyApplication)getApplication()).getPosition(event.getStartCal());
-        List<Event> eventDayList = eventList.get(originalDayPosition);
-        eventDayList.remove(event);
-        if(eventDayList.size() == 0) eventList.remove(eventDayList);
+        ParseEvent parseEvent = eventMap.get(objectID);
+        int originalDayPosition = ((MyApplication)getApplication()).getPosition(parseEvent.getStartCal());
+        List<ParseEvent> parseEventDayList = eventList.get(originalDayPosition);
+        parseEventDayList.remove(parseEvent);
+        if(parseEventDayList.size() == 0) eventList.remove(parseEventDayList);
 
         returnDayPosition = originalDayPosition;
 

@@ -9,8 +9,8 @@ import java.util.Date;
 /**
  * Created by wuxiaoguang on 4/15/15.
  */
-@ParseClassName("Event")
-public class Event extends ParseObject{
+@ParseClassName("ParseEvent")
+public class ParseEvent extends ParseObject{
 
     public Calendar getStartCal(){
         Calendar cal = Calendar.getInstance();
@@ -57,7 +57,24 @@ public class Event extends ParseObject{
     }
 
     public void setNote(String note) {
+        if(note == null) return;
         put("note", note);
+    }
+
+    public void setFrom(String from) {
+        put("from", from);
+    }
+
+    public String getFrom() {
+        return getString("from");
+    }
+
+    public void setCalendarName(String calendarName) {
+        put("calendarName", calendarName);
+    }
+
+    public String getCalendarNaem() {
+        return getString("calendarName");
     }
 
 }
