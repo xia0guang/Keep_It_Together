@@ -49,7 +49,7 @@ public class ParseEvent extends ParseObject{
     }
 
     public void setMemberName(String name) {
-        put("mamberName", name);
+        put("memberName", name);
     }
 
     public String getNote(){

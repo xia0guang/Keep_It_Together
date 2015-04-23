@@ -50,7 +50,7 @@
     <string name="event_end_time_TV">End time:</string>
     <string name="event_notification_TV">Alert:</string>
     <string name="event_note_TV">Note:</string>
-    <string name="event_note_hint">Enter parseEvent note</string>
+    <string name="event_note_hint">descrption</string>
     <string name="title_activity_edit_event">EditEventActivity</string>
     <string name="delete_event_BT">Delete</string>
     <string name="event_notify_others_option">Notify other members:</string>

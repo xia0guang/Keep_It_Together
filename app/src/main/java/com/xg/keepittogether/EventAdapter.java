@@ -117,8 +117,10 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
 //            Log.d("title: ", parseEvent.getTitle());
 //            Log.d("member name: ", parseEvent.getMemberName());
 
-            Log.d("memberName", userPref.getString("memberName", "noValue"));
-            if (parseEvent.getMemberName().equals(userPref.getString("memberName", "noValue"))) {
+            Log.d("memberName", userPref.getString("memberName", null));
+            String member = parseEvent.getMemberName();
+
+            if (parseEvent.getMemberName().equals(userPref.getString("memberName", null))) {
 
 
                 holder.elementHolderList.get(i).elementView.setOnClickListener(new View.OnClickListener() {

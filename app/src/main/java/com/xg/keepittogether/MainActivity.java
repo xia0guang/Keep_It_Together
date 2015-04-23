@@ -77,7 +77,6 @@ public class MainActivity extends ActionBarActivity {
     static final int REQUEST_GOOGLE_PLAY_SERVICES = 1002;
 
 
-    private GoogleAccountCredential credential;
     private com.google.api.services.calendar.Calendar mService;
     private static final String[] SCOPES = {CalendarScopes.CALENDAR_READONLY};
     final HttpTransport transport = AndroidHttp.newCompatibleTransport();
@@ -88,7 +87,6 @@ public class MainActivity extends ActionBarActivity {
 
     /**
      * TODO 1. change notification
-            2. RecyclerView mess up;
             3. setScrollToPosition
      *
      */
@@ -149,7 +147,7 @@ public class MainActivity extends ActionBarActivity {
             npe.printStackTrace();
         }
 
-        credential = GoogleAccountCredential.usingOAuth2(
+        GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
                 getApplicationContext(), Arrays.asList(SCOPES))
                 .setBackOff(new ExponentialBackOff())
                 .setSelectedAccountName(userPref.getString(PREF_ACCOUNT_NAME, null));
@@ -162,13 +160,13 @@ public class MainActivity extends ActionBarActivity {
 
 
         //implement calendar view date changed listener
-        calendarView.setOnDateChangedListener(new OnDateChangedListener() {
+        /*calendarView.setOnDateChangedListener(new OnDateChangedListener() {
             @Override
             public void onDateChanged(MaterialCalendarView materialCalendarView, CalendarDay calendarDay) {
                 int position = ((MyApplication)getApplication()).getPosition(calendarDay.getCalendar());
                 mRecyclerView.smoothScrollToPosition(position);
             }
-        });
+        });*/
 
         //implement date change based on recycler view scrolling
         mRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -188,10 +186,20 @@ public class MainActivity extends ActionBarActivity {
             }
         });
 
-        syncCalendarEvent();
+
 
         storeColorPref();
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        syncCalendarEvent();
+        mAdapter.notifyDataSetChanged();
+        Toast.makeText(this, "I am changing", Toast.LENGTH_SHORT).show();
+    }
+
 
     public void syncCalendarEvent() {
         final int listSize = googlePref.getInt("listSize", 0);
@@ -200,23 +208,20 @@ public class MainActivity extends ActionBarActivity {
                 new AsyncTask<Void, Void, Void>() {
                     @Override
                     protected Void doInBackground(Void... params) {
-                        try {
-
-                            for (int i=0; i<listSize; i++) {
+                        for (int i=0; i<listSize; i++) {
+                            try {
                                 String calendarName = googlePref.getString("calendar_" + i, null);
                                 syncGoogleCalendar(calendarName);
+                            } catch (final GooglePlayServicesAvailabilityIOException availabilityException) {
+                                MainActivity.this.showGooglePlayServicesAvailabilityErrorDialog(
+                                        availabilityException.getConnectionStatusCode());
+                            } catch (UserRecoverableAuthIOException userRecoverableException) {
+                                MainActivity.this.startActivityForResult(
+                                        userRecoverableException.getIntent(),
+                                        SettingActivity.REQUEST_AUTHORIZATION);
+                            } catch (IOException e) {
+                                Log.d("The following error occurred: ",e.getMessage());
                             }
-                        } catch (final GooglePlayServicesAvailabilityIOException availabilityException) {
-                            MainActivity.this.showGooglePlayServicesAvailabilityErrorDialog(
-                                    availabilityException.getConnectionStatusCode());
-
-                        } catch (UserRecoverableAuthIOException userRecoverableException) {
-                            MainActivity.this.startActivityForResult(
-                                    userRecoverableException.getIntent(),
-                                    SettingActivity.REQUEST_AUTHORIZATION);
-
-                        } catch (IOException e) {
-                            Log.d("The following error occurred: ",e.getMessage());
                         }
                         return null;
                     }
@@ -231,7 +236,6 @@ public class MainActivity extends ActionBarActivity {
             }
         }
     }
-
 
     private void syncGoogleCalendar(String calendarName) throws IOException{
         if(calendarName == null) return;
@@ -275,25 +279,33 @@ public class MainActivity extends ActionBarActivity {
                 System.out.println("No new events to sync.");
             } else {
                 for (Event event : items) {
-                    final ParseEvent parseEvent = new ParseEvent();
-                    parseEvent.setTitle(event.getSummary());
-                    parseEvent.setNote(event.getDescription());
-                    java.util.Calendar cal = java.util.Calendar.getInstance();
-                    cal.setTimeInMillis(event.getStart().getDateTime().getValue());
-                    parseEvent.setStartDate(cal);
-                    cal.setTimeInMillis(event.getEnd().getDateTime().getValue());
-                    parseEvent.setEndDate(cal);
-                    parseEvent.setMemberName(userPref.getString("memberName", null));
-                    parseEvent.setFrom("Google_Calendar");
-                    parseEvent.setCalendarName(calendarName);
-                    parseEvent.setACL(new ParseACL(ParseUser.getCurrentUser()));
+                    if("cancelled".equals(event.getStatus())) {
 
-                    parseEvent.pinInBackground(new SaveCallback() {
-                        @Override
-                        public void done(ParseException e) {
-                            parseEvent.saveEventually();
-                        }
-                    });
+
+                    }else {
+                        final ParseEvent parseEvent = new ParseEvent();
+                        System.out.println(event.getId());
+
+                        parseEvent.setObjectId(event.getId());
+                        parseEvent.setTitle(event.getSummary());
+                        parseEvent.setNote(event.getDescription());
+                        java.util.Calendar cal = java.util.Calendar.getInstance();
+                        cal.setTimeInMillis(event.getStart().getDateTime().getValue());
+                        parseEvent.setStartDate(cal);
+                        cal.setTimeInMillis(event.getEnd().getDateTime().getValue());
+                        parseEvent.setEndDate(cal);
+                        parseEvent.setMemberName(userPref.getString("memberName", null));
+                        parseEvent.setFrom("Google_Calendar");
+                        parseEvent.setCalendarName(calendarName);
+                        parseEvent.setACL(new ParseACL(ParseUser.getCurrentUser()));
+
+                        parseEvent.pinInBackground(new SaveCallback() {
+                            @Override
+                            public void done(ParseException e) {
+                                parseEvent.saveEventually();
+                            }
+                        });
+                    }
                 }
             }
 
@@ -322,13 +334,13 @@ public class MainActivity extends ActionBarActivity {
                     for (int i = 1; i < list.size(); i++) {
                         ParseEvent curObj = list.get(i);
                         eventMap.put(curObj.getObjectId(), curObj);
-                        List<ParseEvent> l = eventList.get(eventList.size()-1);
-                        ParseEvent preObj = l.get(l.size()-1);
+                        List<ParseEvent> l = eventList.get(eventList.size() - 1);
+                        ParseEvent preObj = l.get(l.size() - 1);
 
                         java.util.Calendar preDate = preObj.getStartCal();
                         java.util.Calendar curDate = curObj.getStartCal();
 
-                        if(preDate.get(java.util.Calendar.DAY_OF_MONTH) == curDate.get(java.util.Calendar.DAY_OF_MONTH)) {
+                        if (preDate.get(java.util.Calendar.DAY_OF_MONTH) == curDate.get(java.util.Calendar.DAY_OF_MONTH)) {
                             l.add(curObj);
                         } else {
                             eventList.add(new ArrayList<ParseEvent>(Arrays.asList(curObj)));
@@ -336,16 +348,16 @@ public class MainActivity extends ActionBarActivity {
                     }
 
                     //create mAdapter positionMap and reversePositionMap
-                    for (int i = 0; i <eventList.size(); i++) {
+                    for (int i = 0; i < eventList.size(); i++) {
                         java.util.Calendar cal = eventList.get(i).get(0).getStartCal();
-                        long day = (cal.get(java.util.Calendar.YEAR) - 1970)*366 + cal.get(java.util.Calendar.MONTH) * 31 + cal.get(java.util.Calendar.DAY_OF_MONTH);
+                        long day = (cal.get(java.util.Calendar.YEAR) - 1970) * 366 + cal.get(java.util.Calendar.MONTH) * 31 + cal.get(java.util.Calendar.DAY_OF_MONTH);
                         positionMap.put(day, i);
                         reversePositionMap.put(i, cal);
                     }
 
                     mAdapter.notifyDataSetChanged();
 
-                    try{
+                    try {
 
                     } catch (ClassCastException cce) {
                         cce.printStackTrace();
@@ -357,12 +369,13 @@ public class MainActivity extends ActionBarActivity {
         });
     }
 
+
     private void storeColorPref() {
         ParseQuery<ParseObject> queryMember = ParseQuery.getQuery("Members");
         queryMember.findInBackground(new FindCallback<ParseObject>() {
             @Override
             public void done(List<ParseObject> list, ParseException e) {
-                if(e == null && list.size() > 0) {
+                if (e == null && list.size() > 0) {
                     SharedPreferences.Editor edit = userPref.edit();
                     for (ParseObject member : list) {
                         edit.putInt("color." + member.getString("memberName"), member.getInt("color"));
@@ -373,15 +386,6 @@ public class MainActivity extends ActionBarActivity {
                 }
             }
         });
-    }
-
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        mAdapter.notifyDataSetChanged();
-        Toast.makeText(this, "I am changing", Toast.LENGTH_SHORT).show();
     }
 
     @Override
