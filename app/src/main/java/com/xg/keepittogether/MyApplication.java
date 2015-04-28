@@ -9,6 +9,8 @@ import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParsePush;
 import com.parse.SaveCallback;
+import com.xg.keepittogether.Parse.Member;
+import com.xg.keepittogether.Parse.ParseEvent;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -20,36 +22,50 @@ import java.util.List;
  */
 public class MyApplication extends Application {
 
-    protected List<List<ParseEvent>> eventList;
-    protected HashMap<Long, Integer> positionMap;
-    protected HashMap<Integer, Calendar> reversePositionMap;
-    protected HashMap<String, ParseEvent> eventMap;
+
+
+
+    public static class DataWrapper{
+        public List<List<ParseEvent>> eventList;
+        public HashMap<Long, Integer> positionMap;
+        public HashMap<Integer, Calendar> reversePositionMap;
+        public HashMap<String, ParseEvent> eventMap;
+        public Calendar upCal, upThresholdCal, downCal, downThresholdCal;
+        public boolean upFetch, downFetch, loading;
+        DataWrapper() {
+            eventList = new ArrayList<List<ParseEvent>>();
+            positionMap = new HashMap<>();
+            reversePositionMap = new HashMap<>();
+            eventMap = new HashMap<>();
+            upCal = Calendar.getInstance();
+            upThresholdCal = Calendar.getInstance();
+            downCal = Calendar.getInstance();
+            downThresholdCal = Calendar.getInstance();
+            upFetch = true; downFetch = true;
+            loading = false;
+        }
+
+        public void clear() {
+            eventList.clear();
+            positionMap.clear();
+            reversePositionMap.clear();
+            eventMap.clear();
+        }
+    }
+
+    public DataWrapper dataWrapper;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        eventList = new ArrayList<List<ParseEvent>>();
-        positionMap = new HashMap<>();
-        reversePositionMap = new HashMap<>();
-        eventMap = new HashMap<>();
 
-        // Initialize Crash Reporting.
+        dataWrapper = new DataWrapper();
         ParseCrashReporting.enable(this);
-
-        // Enable Local Datastore.
-        Parse.enableLocalDatastore(this);
-        // Add your initialization code here
         ParseObject.registerSubclass(ParseEvent.class);
+        ParseObject.registerSubclass(Member.class);
 
+        Parse.enableLocalDatastore(this);
         Parse.initialize(this, getString(R.string.app_key), getString(R.string.client_key));
-//        ParseUser.enableAutomaticUser();
-//        ParseUser.getCurrentUser().saveInBackground();
-//        ParseACL defaultACL = new ParseACL();
-        // Optionally enable public read access.
-//        defaultACL.setPublicReadAccess(true);
-//        ParseACL.setDefaultACL(defaultACL, true);
-
-
         //subscribe to push notification
         ParsePush.subscribeInBackground("EventUpdate", new SaveCallback() {
             @Override
@@ -67,13 +83,17 @@ public class MyApplication extends Application {
 
     public int getPosition(Calendar cal) {
         long day = (cal.get(Calendar.YEAR) - 1970)*366 + cal.get(Calendar.MONTH) * 31 + cal.get(Calendar.DAY_OF_MONTH);
-        if(positionMap.get(day) != null) return positionMap.get(day);
-        else return -1;
+        for (int i = (int)day; i > 0 ; i--) {
+            if(dataWrapper.positionMap.get(i) != null) {
+                return dataWrapper.positionMap.get(day);
+            }
+        }
+        return -1;
     }
 
     public Calendar getCalendarByPosition(int position) {
-        if(position >= 0 && position < eventList.size()) {
-            return reversePositionMap.get(position);
+        if(position >= 0 && position < dataWrapper.eventList.size()) {
+            return dataWrapper.reversePositionMap.get(position);
         }
         return null;
     }

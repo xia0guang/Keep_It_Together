@@ -16,11 +16,13 @@ import android.widget.EditText;
 import android.widget.Spinner;
 
 import com.parse.FindCallback;
+import com.parse.GetCallback;
 import com.parse.ParseACL;
 import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
+import com.xg.keepittogether.Parse.Member;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,16 +81,21 @@ public class SelectMemberNameFragment extends Fragment {
                 final SharedPreferences.Editor editor = userPref.edit();
                 if(newMemberView.getText().toString().trim().length() == 0) {
                     Spinner memberSpinner = (Spinner)getActivity().findViewById(R.id.memberNameSpinner);
-                    String memberName = memberSpinner.getSelectedItem().toString();
+                    final String memberName = memberSpinner.getSelectedItem().toString();
                     editor.putString("memberName", memberName);
 
                     //query color to store in pref
-                    ParseQuery<ParseObject> query = ParseQuery.getQuery("Members");
+                    ParseQuery<Member> query = ParseQuery.getQuery(Member.class);
                     query.whereEqualTo("memberName", memberName);
-                    query.findInBackground(new FindCallback<ParseObject>() {
+                    query.findInBackground(new FindCallback<Member>() {
                         @Override
-                        public void done(List<ParseObject> parseObjects, ParseException e) {
-                            editor.putInt("color", parseObjects.get(0).getInt("color"));
+                        public void done(List<Member> members, ParseException e) {
+                            if(e == null) {
+                                Member member = members.get(0);
+                                editor.putInt("color", member.getColor());
+                                member.setSyncTokenLong(0);
+                                member.saveEventually();
+                            }
                         }
                     });
 

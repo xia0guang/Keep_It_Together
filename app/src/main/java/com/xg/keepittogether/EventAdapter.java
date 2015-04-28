@@ -1,5 +1,6 @@
 package com.xg.keepittogether;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -13,8 +14,11 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.xg.keepittogether.Parse.ParseEvent;
+
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -22,10 +26,11 @@ import java.util.List;
  */
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> {
 
-    List<List<ParseEvent>> eventList;
+    public List<List<ParseEvent>> eventList;
 
     Context context;
     SharedPreferences userPref;
+    public static final int REQUEST_ADD_OR_CHANGE_NEW_EVENT = 0;
 
     EventAdapter(Context context, List<List<ParseEvent>> eventList, SharedPreferences userPref) {
         this.eventList = eventList;
@@ -54,13 +59,14 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
 
     public static class SubViewHolder extends RecyclerView.ViewHolder {
 
-        private TextView startTimeView, endView, titleView, memberNameView;
+        private TextView startTimeView, endView, titleView, memberNameView, indicateView;
         private ViewGroup elementView;
         public SubViewHolder(View view) {
             super(view);
             startTimeView = (TextView)view.findViewById(R.id.eventStartTimeInElement);
             endView = (TextView)view.findViewById(R.id.eventEndTimeInElement);
             titleView = (TextView)view.findViewById(R.id.eventTitleInElement);
+            indicateView = (TextView)view.findViewById(R.id.indicateGoogleCalendarTV);
             memberNameView = (TextView)view.findViewById(R.id.memberNameInElement);
             elementView = (ViewGroup)view.findViewById(R.id.elementView);
         }
@@ -109,17 +115,14 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
             Calendar endCal = parseEvent.getEndCal();
             holder.elementHolderList.get(i).endView.setText(String.format("%tD  %tl:%tM %tp", endCal, endCal, endCal, endCal));
             holder.elementHolderList.get(i).titleView.setText(parseEvent.getTitle());
+            if ("Google_Calendar".equals(parseEvent.getFrom())) {
+                holder.elementHolderList.get(i).indicateView.setText("Google");
+            } else {
+                holder.elementHolderList.get(i).indicateView.setText("");
+            }
             holder.elementHolderList.get(i).memberNameView.setText("@" + parseEvent.getMemberName());
             holder.elementHolderList.get(i).memberNameView.setBackgroundColor(EventColor.getColor(userPref.getInt("color." + parseEvent.getString("memberName"), 1)));
-
-//            Log.d("start time: ", String.format("%tD  %tl:%tM %tp", startTimeCal, startTimeCal, startTimeCal, startTimeCal));
-//            Log.d("end time: ", String.format("%tD  %tl:%tM %tp", endCal, endCal, endCal, endCal));
-//            Log.d("title: ", parseEvent.getTitle());
-//            Log.d("member name: ", parseEvent.getMemberName());
-
-            Log.d("memberName", userPref.getString("memberName", null));
-            String member = parseEvent.getMemberName();
-
+            //TODO change color based on google calendar
             if (parseEvent.getMemberName().equals(userPref.getString("memberName", null))) {
 
 
@@ -128,21 +131,21 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
                     public void onClick(View v) {
                         Intent intent = new Intent(context, AddEventActivity.class);
                         Bundle bundle = new Bundle();
+                        bundle.putString("eventId", parseEvent.getEventID());
+                        bundle.putString("calendarName", parseEvent.getCalendarName());
+                        bundle.putString("from", parseEvent.getFrom());
                         bundle.putString("title", parseEvent.getTitle());
                         bundle.putString("note", parseEvent.getString("note"));
                         bundle.putLong("startDate", parseEvent.getStartCal().getTimeInMillis());
-//                            Log.d("start: ", "" + parseEvent.getDate("startDate").getTime());
-
                         bundle.putLong("endDate", parseEvent.getEndCal().getTimeInMillis());
-//                            Log.d("start: ", "" + parseEvent.getDate("endDate").getTime());
-
                         bundle.putString("objectID", parseEvent.getObjectId());
                         intent.putExtras(bundle);
-                        context.startActivity(intent);
+                        ((Activity)context).startActivityForResult(intent, REQUEST_ADD_OR_CHANGE_NEW_EVENT);
                     }
                 });
             }
         }
+        System.out.println();
     }
 
     @Override

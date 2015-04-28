@@ -4,6 +4,7 @@ import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.DialogFragment;
+import android.app.DownloadManager;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -16,7 +17,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
@@ -38,15 +38,18 @@ import com.google.api.services.calendar.CalendarScopes;
 import com.google.api.services.calendar.model.CalendarList;
 import com.google.api.services.calendar.model.CalendarListEntry;
 import com.parse.FindCallback;
+import com.parse.GetCallback;
 import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
+import com.xg.keepittogether.Parse.Member;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Queue;
 
 
 public class SettingActivity extends Activity implements AdapterView.OnItemSelectedListener, MultiChoiceListDialogFragment.MultiChoiceListDialogListener{
@@ -68,7 +71,8 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
     private static final String PREF_ACCOUNT_NAME = "googleAccountName";
     private static final String[] SCOPES = {CalendarScopes.CALENDAR_READONLY};
 
-    public List<String> googleCalendarList;
+    public List<String> googleCalendarNameList;
+    public List<String> googleCalendarIdList;
 
 
     @Override
@@ -120,7 +124,7 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
         edit.apply();
 
         ParseQuery<ParseObject> query = ParseQuery.getQuery("Members");
-        query.whereEqualTo("memberName", userPref.getString("memberName","noValue"));
+        query.whereEqualTo("memberName", userPref.getString("memberName",null));
         query.findInBackground(new FindCallback<ParseObject>() {
             @Override
             public void done(List<ParseObject> parseObjects, ParseException e) {
@@ -138,6 +142,18 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
     }
 
     public void signOut(View view) {
+        ParseQuery<Member> query = ParseQuery.getQuery(Member.class);
+        query.whereEqualTo("memberName", userPref.getString("memberName", null));
+        query.getFirstInBackground(new GetCallback<Member>() {
+            @Override
+            public void done(Member member, ParseException e) {
+                if (e == null) {
+                    member.setSyncTokenLong(0);
+                } else {
+                    Log.d("query member error: ", e.getMessage());
+                }
+            }
+        });
         ParseUser.logOut();
         userPref.edit().clear().apply();
         googlePref.edit().clear().apply();
@@ -305,9 +321,11 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
         dlg.dismiss();
         List<CalendarListEntry> listEntries = calendarListEntry.getItems();
         Log.d("calendar List:", listEntries.toString());
-        googleCalendarList = new ArrayList<>();
+        googleCalendarNameList = new ArrayList<>();
+        googleCalendarIdList = new ArrayList<>();
         for (int i = 0; i < listEntries.size(); i++) {
-            googleCalendarList.add(listEntries.get(i).getSummary());
+            googleCalendarNameList.add(listEntries.get(i).getSummary());
+            googleCalendarIdList.add(listEntries.get(i).getId());
         }
     }
 

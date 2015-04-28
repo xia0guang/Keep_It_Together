@@ -1,4 +1,4 @@
-package com.xg.keepittogether;
+package com.xg.keepittogether.Parse;
 
 import com.parse.ParseClassName;
 import com.parse.ParseObject;
@@ -14,14 +14,14 @@ public class ParseEvent extends ParseObject{
 
     public Calendar getStartCal(){
         Calendar cal = Calendar.getInstance();
-        Date date = getDate("startDate");
+        Date date = getStartDate();
         cal.setTime(date);
         return cal;
     }
 
     public Calendar getEndCal(){
         Calendar cal = Calendar.getInstance();
-        Date date = getDate("endDate");
+        Date date = getEndDate();
         cal.setTime(date);
         return cal;
     }
@@ -34,6 +34,14 @@ public class ParseEvent extends ParseObject{
     public void setEndDate(Calendar cal) {
         Date date = cal.getTime();
         put("endDate", date);
+    }
+
+    public Date getStartDate() {
+        return getDate("startDate");
+    }
+
+    public Date getEndDate() {
+        return getDate("endDate");
     }
 
     public String getTitle() {
@@ -73,8 +81,17 @@ public class ParseEvent extends ParseObject{
         put("calendarName", calendarName);
     }
 
-    public String getCalendarNaem() {
+    public String getCalendarName() {
         return getString("calendarName");
     }
 
+    public void setEventID(String id) {
+        put("eventId", id);
+    }
+
+    public String getEventID() {
+        return getString("eventId");
+    }
+
+    //TODO all day event
 }

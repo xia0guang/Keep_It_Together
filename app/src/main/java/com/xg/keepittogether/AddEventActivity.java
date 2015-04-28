@@ -6,12 +6,14 @@ import android.app.DialogFragment;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -23,10 +25,13 @@ import com.parse.ParseInstallation;
 import com.parse.ParsePush;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
+import com.xg.keepittogether.Parse.ParseEvent;
+import com.xg.keepittogether.Parse.ParseEventUtils;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -40,6 +45,7 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
 
 
     private SharedPreferences userPref;
+    private SharedPreferences googlePref;
     Bundle bundle;
 
     int[] alertTimeList = {-1, 0, 5, 30, 60, 120, 1440};
@@ -56,10 +62,10 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
     private Spinner alertTimeSpinner;
     private Switch notifyOtherSwitch;
 
-    private List<List<ParseEvent>> eventList;
-    private HashMap<String, ParseEvent> eventMap;
+    private MyApplication.DataWrapper dataWrapper;
 
     private boolean notifyOther = false;
+    private boolean changedStartDate = false;
     private int returnDayPosition = 0;
 
 
@@ -69,11 +75,10 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
         setContentView(R.layout.activity_add_event);
         bundle = getIntent().getExtras();
 
-        eventList = ((MyApplication)getApplication()).eventList;
-        eventMap = ((MyApplication)getApplication()).eventMap;
-
+        dataWrapper = ((MyApplication)getApplication()).dataWrapper;
 
         userPref = getSharedPreferences("User_Preferences", MODE_PRIVATE);
+        googlePref = getSharedPreferences("Google_Calendar_List", MODE_PRIVATE);
         startDateView = (TextView)findViewById(R.id.eventStartDate);
         startTimeView = (TextView)findViewById(R.id.eventStartTime);
         endDateView = (TextView)findViewById(R.id.eventEndDate);
@@ -88,13 +93,14 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
             }
         });
 
-
-        Button deleteEventButton = (Button)findViewById(R.id.deleteEvent);
+        LinearLayout addLayout = (LinearLayout)findViewById(R.id.add_event_BT_layout);
+        LinearLayout saveLayout = (LinearLayout)findViewById(R.id.save_event_BT_layout);
+        LinearLayout deleteLayout = (LinearLayout)findViewById(R.id.delete_event_BT_layout);
         if(bundle != null) {
-            deleteEventButton.setVisibility(View.VISIBLE);
+            addLayout.setVisibility(View.GONE);
+            saveLayout.setVisibility(View.VISIBLE);
+            deleteLayout.setVisibility(View.VISIBLE);
         }
-
-
 
         startCal = Calendar.getInstance();
         endCal = Calendar.getInstance();
@@ -102,12 +108,9 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
             endCal.set(Calendar.HOUR_OF_DAY, endCal.get(Calendar.HOUR_OF_DAY) + 1);
         } else {
             startCal.setTimeInMillis(bundle.getLong("startDate"));
-//            Log.d("start: ", "" + bundle.getLong("start"));
             endCal.setTimeInMillis(bundle.getLong("endDate"));
             titleView.setText(bundle.getString("title"));
             noteView.setText(bundle.getString("note"));
-
-
         }
         setEventDateView(startDateView, startCal);
         setEventTimeView(startTimeView, startCal);
@@ -117,150 +120,201 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
         alertTimeSpinner = (Spinner)findViewById(R.id.eventAlertSpinner);
         ArrayAdapter<String> alertSpinnerAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, alertTimeSpinnerList);
         alertTimeSpinner.setAdapter(alertSpinnerAdapter);
-
     }
 
 
     public void addEvent(View view) {
-        //upload event to server
+        ParseEvent parseEvent = new ParseEvent();
+        parseEvent.setMemberName(userPref.getString("memberName", null));
+        parseEvent.setTitle(titleView.getText().toString());
+        parseEvent.setStartDate(startCal);
+        parseEvent.setEndDate(endCal);
+        parseEvent.setNote(noteView.getText().toString());
+        parseEvent.setACL(new ParseACL(ParseUser.getCurrentUser()));
+        parseEvent.saveEventually();
+        parseEvent.pinInBackground();
 
-        try {
-            uploadEvent();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        // set alert
-        alertCal = (Calendar)startCal.clone();
-        int minuteOffset = alertTimeList[alertTimeSpinner.getSelectedItemPosition()];
-        alertCal.set(Calendar.MINUTE, alertCal.get(Calendar.MINUTE) - minuteOffset);
-
-        if (minuteOffset >= 0) {
-            //register notification
-            Intent myIntent = new Intent(this, AlertBroadcastReceiver.class);
-            Bundle bundle = new Bundle();
-            bundle.putString("title", titleView.getText().toString());
-
-            //add content to notification
-            String contentPrefix = "";
-            String content;
-            Calendar midnightCal = (Calendar)alertCal.clone();
-            midnightCal.set(Calendar.HOUR_OF_DAY, 23);
-            midnightCal.set(Calendar.MINUTE, 59);
-            midnightCal.set(Calendar.SECOND, 59);
-            if(startCal.compareTo(midnightCal) > 0) {
-                contentPrefix = "Tomorrow, ";
+        if (notifyOther) {
+            try {
+                notifyOther();
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
-            content = contentPrefix + String.format("%tl:%tM %tp - %tl:%tM %tp",startCal, startCal, startCal, endCal, endCal, endCal);
-            bundle.putString("content", content);
-
-            myIntent.putExtras(bundle);
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, myIntent, 0);
-
-
-            AlarmManager alarmManager = (AlarmManager)getSystemService(ALARM_SERVICE);
-            alarmManager.set(AlarmManager.RTC, alertCal.getTimeInMillis(), pendingIntent);
+        }
+        // set alert
+        int minuteOffset = alertTimeList[alertTimeSpinner.getSelectedItemPosition()];
+        if (minuteOffset >= 0) {
+            setAlert(minuteOffset);
+        }
+        if(startCal.compareTo(dataWrapper.eventList.get(0).get(0).getStartCal()) >= 0
+                && ParseEventUtils.hashCalDay(startCal) <= ParseEventUtils.hashCalDay(dataWrapper.eventList.get(dataWrapper.eventList.size()-1).get(0).getStartCal()))
+        {
+            updateEventList(parseEvent);
         }
 
         finish();
     }
 
-    private void uploadEvent() throws JSONException {
-        //send push notification
+    public void saveEvent(View view) {
+        ParseQuery<ParseEvent> query = ParseQuery.getQuery(ParseEvent.class);
+        query.fromLocalDatastore();
+        ParseEvent event = null;
+        try {
+            event = query.get(bundle.getString("objectID"));
+            if(!startCal.equals(event.getStartCal())) {
+                changedStartDate = true;
+                int originalDayPosition = ((MyApplication)getApplication()).getPosition(event.getStartCal());
+                List<ParseEvent> parseEventDayList = dataWrapper.eventList.get(originalDayPosition);
+                parseEventDayList.remove(event);
+                if(parseEventDayList.size() == 0) dataWrapper.eventList.remove(parseEventDayList);
+            }
+            event.setTitle(titleView.getText().toString());
+            event.setStartDate(startCal);
+            event.setEndDate(endCal);
+            event.setNote(noteView.getText().toString());
+            event.saveEventually();
+            event.pinInBackground();
+
+        } catch (ParseException pe) {
+            Log.d("Query", "Error: " + pe.getMessage());
+            Log.d("ObjectId: ", bundle.getString("objectID"));
+        }
+
+
+        if("Google_Calendar".equals(bundle.getString("from"))) {
+            String calendarId = getCalendarId(bundle.getString("calendarName"));
+            String eventId = bundle.getString("eventId");
+            try {
+                GoogleCalendarUtils.uploadSingleEventInNewThread(this, calendarId, eventId, event);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if(changedStartDate) {
+            if(startCal.compareTo(dataWrapper.eventList.get(0).get(0).getStartCal()) >= 0
+                    && ParseEventUtils.hashCalDay(startCal) <= ParseEventUtils.hashCalDay(dataWrapper.eventList.get(dataWrapper.eventList.size()-1).get(0).getStartCal()))
+            {
+                updateEventList(event);
+            }
+            returnDayPosition = ((MyApplication)getApplication()).getPosition(startCal);
+        }
 
         if (notifyOther) {
-            ParseQuery pushQuery = ParseInstallation.getQuery();
-            pushQuery.whereEqualTo("user", ParseUser.getCurrentUser());
-            String memberName = userPref.getString("memberName", "noValue");
-            pushQuery.whereNotEqualTo("memberName", memberName);
-            Log.d("memberName", memberName);
-            ParsePush push = new ParsePush();
-            push.setChannel("EventUpdate");
-            JSONObject data = new JSONObject("{\"name\": \"Vaughn\",\"newsItem\": \"Man bites dog\"}");
-            push.setData(data);
-            push.setQuery(pushQuery); // Set our Installation query
-            if (bundle == null) {
-                push.setMessage(memberName + "just added a new Event:" + titleView.getText().toString());
-            } else {
-                push.setMessage(memberName + "just changed a new Event:" + titleView.getText().toString());
+            try {
+                notifyOther();
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
-            push.sendInBackground();
+        }
+        // set alert
+        int minuteOffset = alertTimeList[alertTimeSpinner.getSelectedItemPosition()];
+        if (minuteOffset >= 0) {
+            setAlert(minuteOffset);
+        }
+        finish();
+    }
+
+    public void deleteEvent(View view) {
+        ParseQuery<ParseEvent> query = ParseQuery.getQuery(ParseEvent.class);
+        query.fromLocalDatastore();
+        try {
+            ParseEvent event = query.get(bundle.getString("objectID"));
+            event.deleteEventually();
+            event.unpin();
+        } catch (ParseException pe) {
+            Log.d("Query", "Error: " + pe.getMessage());
+            Log.d("ObjectId: ", bundle.getString("objectID"));
         }
 
-        ParseEvent parseEvent;
+        String objectID = bundle.getString("objectID");
+        ParseEvent parseEvent = dataWrapper.eventMap.get(objectID);
+        int originalDayPosition = ((MyApplication)getApplication()).getPosition(parseEvent.getStartCal());
+        List<ParseEvent> parseEventDayList = dataWrapper.eventList.get(originalDayPosition);
+        parseEventDayList.remove(parseEvent);
+        if(parseEventDayList.size() == 0) dataWrapper.eventList.remove(parseEventDayList);
+
+        returnDayPosition = originalDayPosition;
+
+        finish();
+    }
+
+    //send push notification
+    private void notifyOther() throws JSONException{
+        ParseQuery pushQuery = ParseInstallation.getQuery();
+        pushQuery.whereEqualTo("user", ParseUser.getCurrentUser());
+        String memberName = userPref.getString("memberName", "noValue");
+        pushQuery.whereNotEqualTo("memberName", memberName);
+        Log.d("memberName", memberName);
+        ParsePush push = new ParsePush();
+        push.setChannel("EventUpdate");
+        JSONObject data = new JSONObject("{\"name\": \"Vaughn\",\"newsItem\": \"Man bites dog\"}");
+        push.setData(data);
+        push.setQuery(pushQuery); // Set our Installation query
         if (bundle == null) {
-            //upload to server
-            parseEvent = new ParseEvent();
-            parseEvent.put("memberName", userPref.getString("memberName", "noValue"));
-            parseEvent.put("title", titleView.getText().toString());
-            parseEvent.setStartDate(startCal);
-            parseEvent.setEndDate(endCal);
-            parseEvent.put("note", noteView.getText().toString());
-            parseEvent.setACL(new ParseACL(ParseUser.getCurrentUser()));
-            parseEvent.saveEventually();
-
-
-            //add local
-
-
+            push.setMessage(memberName + "just added a new Event:" + titleView.getText().toString());
         } else {
-            //change in server
+            push.setMessage(memberName + "just changed a new Event:" + titleView.getText().toString());
+        }
+        push.sendInBackground();
+    }
 
-            ParseQuery<ParseEvent> query = ParseQuery.getQuery(ParseEvent.class);
-            query.getInBackground(bundle.getString("objectID"), new GetCallback<ParseEvent>() {
-                @Override
-                public void done(ParseEvent parseEvent, ParseException e) {
-                    if (e == null) {
-                        parseEvent.setTitle(titleView.getText().toString());
-                        parseEvent.setStartDate(startCal);
-                        parseEvent.setEndDate(endCal);
-                        parseEvent.setNote(noteView.getText().toString());
-                        parseEvent.saveEventually();
-                    } else {
-                        Log.d("Query", "Error: " + e.getMessage());
-                        Log.d("ObjectId: ", bundle.getString("objectID"));
+    private void setAlert(int minuteOffset) {
+        alertCal = (Calendar)startCal.clone();
+        alertCal.set(Calendar.MINUTE, alertCal.get(Calendar.MINUTE) - minuteOffset);
+        Intent myIntent = new Intent(this, AlertBroadcastReceiver.class);
+        Bundle bundle = new Bundle();
+        bundle.putString("title", titleView.getText().toString());
+        //add content to notification
+        String contentPrefix = "";
+        String content;
+        Calendar midnightCal = (Calendar)alertCal.clone();
+        midnightCal.set(Calendar.HOUR_OF_DAY, 23);
+        midnightCal.set(Calendar.MINUTE, 59);
+        midnightCal.set(Calendar.SECOND, 59);
+        if(startCal.compareTo(midnightCal) > 0) {
+            contentPrefix = "Tomorrow, ";
+        }
+        content = contentPrefix + String.format("%tl:%tM %tp - %tl:%tM %tp",startCal, startCal, startCal, endCal, endCal, endCal);
+        bundle.putString("content", content);
+        myIntent.putExtras(bundle);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, myIntent, 0);
+        AlarmManager alarmManager = (AlarmManager)getSystemService(ALARM_SERVICE);
+        alarmManager.set(AlarmManager.RTC, alertCal.getTimeInMillis(), pendingIntent);
+    }
+
+    private void updateEventList(ParseEvent event) {
+        for (int i = 0; i < dataWrapper.eventList.size(); i++) {
+            List<ParseEvent> curList = dataWrapper.eventList.get(i);
+            ParseEvent curEvent = curList.get(0);
+            Calendar curCal = curEvent.getStartCal();
+            if(ParseEventUtils.hashCalDay(startCal) == ParseEventUtils.hashCalDay(curCal))  {
+                curList.add(event);
+                Collections.sort(curList, new Comparator<ParseEvent>() {
+                    @Override
+                    public int compare(ParseEvent lhs, ParseEvent rhs) {
+                        return lhs.getEndCal().compareTo(rhs.getEndCal());
                     }
-                }
-            });
-
-            //change locally
-            String objectID = bundle.getString("objectID");
-            parseEvent = eventMap.get(objectID);
-            int originalDayPosition = ((MyApplication)getApplication()).getPosition(parseEvent.getStartCal());
-            List<ParseEvent> parseEventDayList = eventList.get(originalDayPosition);
-            parseEventDayList.remove(parseEvent);
-            if(parseEventDayList.size() == 0) eventList.remove(parseEventDayList);
-
-            parseEvent.setTitle(titleView.getText().toString());
-            parseEvent.setStartDate(startCal);
-            parseEvent.setEndDate(endCal);
-            parseEvent.setNote(noteView.getText().toString());
-
+                });
+                break;
+            } else if(ParseEventUtils.hashCalDay(startCal) < ParseEventUtils.hashCalDay(curCal)) {
+                List<ParseEvent> insertList = new ArrayList<>(Arrays.asList(event));
+                dataWrapper.eventList.add(i, insertList);
+                break;
+            }
         }
+    }
 
-        int dayPosition = ((MyApplication)getApplication()).getPosition(startCal);
-        if (dayPosition >= 0) {
-            List<ParseEvent> parseEventDayList = eventList.get(dayPosition);
-            parseEventDayList.add(parseEvent);
-            Collections.sort(parseEventDayList, new Comparator<ParseEvent>() {
-                @Override
-                public int compare(ParseEvent lhs, ParseEvent rhs) {
-                    return (int)lhs.getStartCal().getTimeInMillis() - (int)rhs.getStartCal().getTimeInMillis();
-                }
-            });
-        } else {
-            eventList.add(new ArrayList<ParseEvent>(Arrays.asList(parseEvent)));
-            Collections.sort(eventList, new Comparator<List<ParseEvent>>() {
-                @Override
-                public int compare(List<ParseEvent> lhs, List<ParseEvent> rhs) {
-                    return (int)lhs.get(0).getStartCal().getTimeInMillis() - (int)rhs.get(0).getStartCal().getTimeInMillis();
-                }
-            });
+    private String getCalendarId(String calendarName) {
+        if(calendarName == null) return null;
+        String cid = "";
+        int listSize = googlePref.getInt("listSize", 0);
+        for (int i = 0; i < listSize; i++) {
+            if(calendarName.equals(googlePref.getString("calendar_" + i, null))) {
+                cid = googlePref.getString("calendar_Id_" + i, null);
+            }
         }
-
-        returnDayPosition = dayPosition;
-
-        Log.d("","");
+        return cid;
     }
 
     private void setEventDateView(TextView dateView, Calendar cal) {
@@ -291,33 +345,6 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
     public void setEventEndTime(View view) {
         DialogFragment frag = TimePickerFragment.getInstance(endCal.getTimeInMillis(), false);
         frag.show(getFragmentManager(), "endTimeFrag");
-    }
-
-    public void deleteEvent(View view) {
-        ParseQuery<ParseEvent> query = ParseQuery.getQuery(ParseEvent.class);
-        query.getInBackground(bundle.getString("objectID"), new GetCallback<ParseEvent>() {
-            @Override
-            public void done(ParseEvent parseEvent, ParseException e) {
-                if (e == null) {
-                    parseEvent.deleteEventually();
-                } else {
-                    Log.d("Query", "Error: " + e.getMessage());
-                    Log.d("ObjectId: ", bundle.getString("objectID"));
-                }
-            }
-        });
-
-
-        String objectID = bundle.getString("objectID");
-        ParseEvent parseEvent = eventMap.get(objectID);
-        int originalDayPosition = ((MyApplication)getApplication()).getPosition(parseEvent.getStartCal());
-        List<ParseEvent> parseEventDayList = eventList.get(originalDayPosition);
-        parseEventDayList.remove(parseEvent);
-        if(parseEventDayList.size() == 0) eventList.remove(parseEventDayList);
-
-        returnDayPosition = originalDayPosition;
-
-        finish();
     }
 
     @Override

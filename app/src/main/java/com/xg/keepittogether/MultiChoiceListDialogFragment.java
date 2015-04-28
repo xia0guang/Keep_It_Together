@@ -8,7 +8,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -40,11 +39,13 @@ public class MultiChoiceListDialogFragment extends DialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         //saves list of selected items indexes
-        final List<String> calendarList = ((SettingActivity)getActivity()).googleCalendarList;
+        final List<String> calendarList = ((SettingActivity)getActivity()).googleCalendarNameList;
+        final List<String> calendarIdList = ((SettingActivity)getActivity()).googleCalendarIdList;
 
         final boolean[] isSelectedArray = new boolean[calendarList.size()];
         final String[] calendarArray = calendarList.toArray(new String[calendarList.size()]);
         final List<String> selectedCalendars = new ArrayList<>();
+        final List<String> selectedCalendarIds = new ArrayList<>();
 
         final SharedPreferences calendarPref = getActivity().getSharedPreferences("Google_Calendar_List", Context.MODE_PRIVATE);
         final int listSize = calendarPref.getInt("listSize", 0);
@@ -53,6 +54,11 @@ public class MultiChoiceListDialogFragment extends DialogFragment {
             if(calendarList.contains(calendar)) {
                 isSelectedArray[calendarList.indexOf(calendar)] = true;
                 selectedCalendars.add(calendar);
+            }
+
+            String calendarId = calendarPref.getString("calendar_Id_" + i, null);
+            if(calendarIdList.contains(calendarId)) {
+                selectedCalendarIds.add(calendarId);
             }
 
         }
@@ -67,10 +73,12 @@ public class MultiChoiceListDialogFragment extends DialogFragment {
                             public void onClick(DialogInterface dialog, int which, boolean isChecked) {
                                 if(isChecked && !selectedCalendars.contains(calendarArray[which])) {
                                     selectedCalendars.add(calendarArray[which]);
+                                    selectedCalendarIds.add(calendarIdList.get(which));
                                     return;
                                 }
                                 if(!isChecked && selectedCalendars.contains(calendarArray[which])) {
                                     selectedCalendars.remove(calendarArray[which]);
+                                    selectedCalendarIds.remove(calendarIdList.get(which));
                                 }
                             }
                         })
@@ -83,6 +91,7 @@ public class MultiChoiceListDialogFragment extends DialogFragment {
                         editor.putInt("listSize", selectedCalendars.size());
                         for (int i = 0; i < selectedCalendars.size(); i++) {
                             editor.putString("calendar_" + i, selectedCalendars.get(i));
+                            editor.putString("calendar_Id_" + i, selectedCalendarIds.get(i));
                         }
                         editor.apply();
                         mDialogListener.onOkClicked();
