@@ -142,6 +142,8 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
                         ((Activity)context).startActivityForResult(intent, REQUEST_ADD_OR_CHANGE_NEW_EVENT);
                     }
                 });
+            } else {
+                holder.elementHolderList.get(i).elementView.setOnClickListener(null);
             }
         }
     }
