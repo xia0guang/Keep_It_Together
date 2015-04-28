@@ -1,6 +1,7 @@
 package com.xg.keepittogether;
 
 
+import android.app.DialogFragment;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
@@ -31,7 +32,7 @@ import java.util.List;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class SelectMemberNameFragment extends Fragment {
+public class SelectMemberNameFragment extends DialogFragment {
 
 
     public SelectMemberNameFragment() {

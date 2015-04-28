@@ -131,6 +131,7 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
         parseEvent.setEndDate(endCal);
         parseEvent.setNote(noteView.getText().toString());
         parseEvent.setACL(new ParseACL(ParseUser.getCurrentUser()));
+        parseEvent.setConfirmed();
         parseEvent.saveEventually();
         parseEvent.pinInBackground();
 
@@ -141,6 +142,8 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
                 e.printStackTrace();
             }
         }
+
+        //TODO add to google calendar if option is on
         // set alert
         int minuteOffset = alertTimeList[alertTimeSpinner.getSelectedItemPosition()];
         if (minuteOffset >= 0) {
@@ -158,15 +161,16 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
     public void saveEvent(View view) {
         ParseQuery<ParseEvent> query = ParseQuery.getQuery(ParseEvent.class);
         query.fromLocalDatastore();
-        ParseEvent event = null;
+        ParseEvent event;
         try {
             event = query.get(bundle.getString("objectID"));
             if(!startCal.equals(event.getStartCal())) {
-                changedStartDate = true;
-                int originalDayPosition = ((MyApplication)getApplication()).getPosition(event.getStartCal());
+                int originalDayPosition = bundle.getInt("listPosition");
                 List<ParseEvent> parseEventDayList = dataWrapper.eventList.get(originalDayPosition);
                 parseEventDayList.remove(event);
-                if(parseEventDayList.size() == 0) dataWrapper.eventList.remove(parseEventDayList);
+                if(parseEventDayList.size() == 0) {
+                    dataWrapper.eventList.remove(parseEventDayList);
+                }
             }
             event.setTitle(titleView.getText().toString());
             event.setStartDate(startCal);
@@ -175,29 +179,27 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
             event.saveEventually();
             event.pinInBackground();
 
+            if(changedStartDate) {
+                if(startCal.compareTo(dataWrapper.eventList.get(0).get(0).getStartCal()) >= 0
+                        && ParseEventUtils.hashCalDay(startCal) <= ParseEventUtils.hashCalDay(dataWrapper.eventList.get(dataWrapper.eventList.size()-1).get(0).getStartCal()))
+                {
+                    updateEventList(event);
+                }
+            }
+
+            if("Google_Calendar".equals(bundle.getString("from"))) {
+                String calendarId = getCalendarId(bundle.getString("calendarName"));
+                String eventId = bundle.getString("eventId");
+                try {
+                    GoogleCalendarUtils.uploadSingleEventInNewThread(this, calendarId, eventId, event);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
         } catch (ParseException pe) {
             Log.d("Query", "Error: " + pe.getMessage());
             Log.d("ObjectId: ", bundle.getString("objectID"));
-        }
-
-
-        if("Google_Calendar".equals(bundle.getString("from"))) {
-            String calendarId = getCalendarId(bundle.getString("calendarName"));
-            String eventId = bundle.getString("eventId");
-            try {
-                GoogleCalendarUtils.uploadSingleEventInNewThread(this, calendarId, eventId, event);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        if(changedStartDate) {
-            if(startCal.compareTo(dataWrapper.eventList.get(0).get(0).getStartCal()) >= 0
-                    && ParseEventUtils.hashCalDay(startCal) <= ParseEventUtils.hashCalDay(dataWrapper.eventList.get(dataWrapper.eventList.size()-1).get(0).getStartCal()))
-            {
-                updateEventList(event);
-            }
-            returnDayPosition = ((MyApplication)getApplication()).getPosition(startCal);
         }
 
         if (notifyOther) {
@@ -218,23 +220,39 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
     public void deleteEvent(View view) {
         ParseQuery<ParseEvent> query = ParseQuery.getQuery(ParseEvent.class);
         query.fromLocalDatastore();
+        ParseEvent event;
         try {
-            ParseEvent event = query.get(bundle.getString("objectID"));
-            event.deleteEventually();
-            event.unpin();
+            event = query.get(bundle.getString("objectID"));
+            event.setCancelled();
+            event.saveEventually();
+            event.pinInBackground();
+//            event.deleteEventually();
+//            event.unpin();
+
+            int originalDayPosition = bundle.getInt("listPosition");
+            List<ParseEvent> parseEventDayList = dataWrapper.eventList.get(originalDayPosition);
+            parseEventDayList.remove(event);
+            if(parseEventDayList.size() == 0) {
+                dataWrapper.eventList.remove(parseEventDayList);
+            }
+            returnDayPosition = originalDayPosition;
         } catch (ParseException pe) {
             Log.d("Query", "Error: " + pe.getMessage());
             Log.d("ObjectId: ", bundle.getString("objectID"));
+            finish();
         }
 
-        String objectID = bundle.getString("objectID");
-        ParseEvent parseEvent = dataWrapper.eventMap.get(objectID);
-        int originalDayPosition = ((MyApplication)getApplication()).getPosition(parseEvent.getStartCal());
-        List<ParseEvent> parseEventDayList = dataWrapper.eventList.get(originalDayPosition);
-        parseEventDayList.remove(parseEvent);
-        if(parseEventDayList.size() == 0) dataWrapper.eventList.remove(parseEventDayList);
+        if("Google_Calendar".equals(bundle.getString("from"))) {
+            String calendarId = getCalendarId(bundle.getString("calendarName"));
+            String eventId = bundle.getString("eventId");
+            try {
+                GoogleCalendarUtils.deleteSingleEventInNewThread(this, calendarId, eventId);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
-        returnDayPosition = originalDayPosition;
+
 
         finish();
     }

@@ -4,7 +4,6 @@ import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.DialogFragment;
-import android.app.DownloadManager;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -49,7 +48,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Queue;
 
 
 public class SettingActivity extends Activity implements AdapterView.OnItemSelectedListener, MultiChoiceListDialogFragment.MultiChoiceListDialogListener{
@@ -73,6 +71,8 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
 
     public List<String> googleCalendarNameList;
     public List<String> googleCalendarIdList;
+
+    private Intent returnData = new Intent();
 
 
     @Override
@@ -171,6 +171,7 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
             calList += googlePref.getString("calendar_" + i, "") + "\n";
         }
         googleCalendarListView.setText(calList);
+        returnData.putExtra("googleCalendarSettingChanged", true);
     }
 
     private static class ColorApapter extends ArrayAdapter<String> {
@@ -222,9 +223,8 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
     @Override
     public void finish() {
         if (colorChanged) {
-            Intent data = new Intent();
-            data.putExtra("colorChanged", true);
-            setResult(RESULT_OK, data);
+            returnData.putExtra("colorChanged", true);//TODO change place color to color setting
+            setResult(RESULT_OK, returnData);
         }
         super.finish();
     }

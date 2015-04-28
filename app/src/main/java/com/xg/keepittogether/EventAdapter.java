@@ -101,7 +101,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
     }
 
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
+    public void onBindViewHolder(ViewHolder holder, final int position) {
         List<ParseEvent> list = eventList.get(position);
 
         ParseEvent headParseEvent = list.get(0);
@@ -124,8 +124,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
             holder.elementHolderList.get(i).memberNameView.setBackgroundColor(EventColor.getColor(userPref.getInt("color." + parseEvent.getString("memberName"), 1)));
             //TODO change color based on google calendar
             if (parseEvent.getMemberName().equals(userPref.getString("memberName", null))) {
-
-
                 holder.elementHolderList.get(i).elementView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -139,13 +137,13 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
                         bundle.putLong("startDate", parseEvent.getStartCal().getTimeInMillis());
                         bundle.putLong("endDate", parseEvent.getEndCal().getTimeInMillis());
                         bundle.putString("objectID", parseEvent.getObjectId());
+                        bundle.putInt("listPosition", position);
                         intent.putExtras(bundle);
                         ((Activity)context).startActivityForResult(intent, REQUEST_ADD_OR_CHANGE_NEW_EVENT);
                     }
                 });
             }
         }
-        System.out.println();
     }
 
     @Override

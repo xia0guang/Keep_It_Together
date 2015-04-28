@@ -50,6 +50,7 @@ public class GoogleCalendarUtils {
     private static SharedPreferences userPref;
     private static SharedPreferences googlePref;
 
+    static final int REQUEST_AUTHORIZATION = 1001;
     static final int REQUEST_GOOGLE_PLAY_SERVICES = 1002;
 
 
@@ -148,10 +149,7 @@ public class GoogleCalendarUtils {
                             parseEvent = new ParseEvent();
                         }
                         if("cancelled".equals(event.getStatus())) {
-                            parseEvent.deleteEventually();
-                            query.fromLocalDatastore();
-                            parseEvent = query.getFirst();
-                            parseEvent.unpin();
+                            parseEvent.setCancelled();
                         } else {
                             parseEvent.setEventID(event.getId());
                             parseEvent.setTitle(event.getSummary());
@@ -163,9 +161,9 @@ public class GoogleCalendarUtils {
                             parseEvent.setCalendarName(calendarName);
                             parseEvent.setACL(new ParseACL(ParseUser.getCurrentUser()));
 
-                            parseEvent.pin();
-                            parseEvent.save();
                         }
+                        parseEvent.pin();
+                        parseEvent.save();
                     }
                 }
 
@@ -218,7 +216,7 @@ public class GoogleCalendarUtils {
                 try {
                     updatedEvent = mService.events().update(calendarId, event.getId(), event).execute();
                 }catch (UserRecoverableAuthIOException e) {
-                    ((AddEventActivity)context).startActivityForResult(e.getIntent(), 0);
+                    ((AddEventActivity)context).startActivityForResult(e.getIntent(), REQUEST_AUTHORIZATION);
                 }catch (IOException e) {
                     e.printStackTrace();
                     System.exit(1);
@@ -230,6 +228,41 @@ public class GoogleCalendarUtils {
         }.execute();
         return true;
     }
+
+    public static boolean deleteSingleEventInNewThread(final Context context,final String calendarId, final String eventId) throws IOException {
+        try {
+            GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
+                    context, Arrays.asList(SCOPESUPDATE))
+                    .setBackOff(new ExponentialBackOff())
+                    .setSelectedAccountName(userPref.getString(PREF_ACCOUNT_NAME, null));
+
+            mService = new com.google.api.services.calendar.Calendar.Builder(
+                    transport, jsonFactory, credential)
+                    .setApplicationName("Keep Together")
+                    .build();
+
+        } catch (Throwable t) {
+            t.printStackTrace();
+            System.exit(1);
+        }
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    mService.events().delete(calendarId, eventId).execute();
+                }catch (UserRecoverableAuthIOException e) {
+                    ((AddEventActivity)context).startActivityForResult(e.getIntent(), 0);
+                }catch (IOException e) {
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+                return null;
+            }
+        }.execute();
+        return true;
+    }
+
+
 
 
     /**

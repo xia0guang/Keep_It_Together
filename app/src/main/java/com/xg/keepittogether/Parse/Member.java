@@ -34,4 +34,5 @@ public class Member extends ParseObject{
     public long getSyncToken() {
         return getLong("syncTokenLong");
     }
+
 }

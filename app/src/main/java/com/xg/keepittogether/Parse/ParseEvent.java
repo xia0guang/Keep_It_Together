@@ -93,5 +93,16 @@ public class ParseEvent extends ParseObject{
         return getString("eventId");
     }
 
+    public void setCancelled() {
+        put("inList", false);
+    }
+    public void setConfirmed() {
+        put("inList", true);
+    }
+
+    public boolean getStatus() {
+        return getBoolean("inList");
+    }
+
     //TODO all day event
 }

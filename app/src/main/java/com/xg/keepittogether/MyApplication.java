@@ -27,16 +27,16 @@ public class MyApplication extends Application {
 
     public static class DataWrapper{
         public List<List<ParseEvent>> eventList;
-        public HashMap<Long, Integer> positionMap;
+//        public HashMap<Long, Integer> positionMap;
         public HashMap<Integer, Calendar> reversePositionMap;
-        public HashMap<String, ParseEvent> eventMap;
+//        public HashMap<String, ParseEvent> eventMap;
         public Calendar upCal, upThresholdCal, downCal, downThresholdCal;
         public boolean upFetch, downFetch, loading;
         DataWrapper() {
             eventList = new ArrayList<List<ParseEvent>>();
-            positionMap = new HashMap<>();
+//            positionMap = new HashMap<>();
             reversePositionMap = new HashMap<>();
-            eventMap = new HashMap<>();
+//            eventMap = new HashMap<>();
             upCal = Calendar.getInstance();
             upThresholdCal = Calendar.getInstance();
             downCal = Calendar.getInstance();
@@ -47,9 +47,9 @@ public class MyApplication extends Application {
 
         public void clear() {
             eventList.clear();
-            positionMap.clear();
+//            positionMap.clear();
             reversePositionMap.clear();
-            eventMap.clear();
+//            eventMap.clear();
         }
     }
 
@@ -81,15 +81,11 @@ public class MyApplication extends Application {
 
     }
 
-    public int getPosition(Calendar cal) {
+    /*public int getPosition(Calendar cal) {
         long day = (cal.get(Calendar.YEAR) - 1970)*366 + cal.get(Calendar.MONTH) * 31 + cal.get(Calendar.DAY_OF_MONTH);
-        for (int i = (int)day; i > 0 ; i--) {
-            if(dataWrapper.positionMap.get(i) != null) {
-                return dataWrapper.positionMap.get(day);
-            }
-        }
+
         return -1;
-    }
+    }*/
 
     public Calendar getCalendarByPosition(int position) {
         if(position >= 0 && position < dataWrapper.eventList.size()) {

@@ -3,7 +3,6 @@ package com.xg.keepittogether.Parse;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.provider.ContactsContract;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -19,7 +18,6 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -38,15 +36,17 @@ public class ParseEventUtils {
         MyApplication.DataWrapper dataWrapper = ((MyApplication)activity.getApplication()).dataWrapper;
         SharedPreferences googlePref = activity.getSharedPreferences("Google_Calendar_List", Context.MODE_PRIVATE);
 
-        dataWrapper.clear();
 
+        dataWrapper.clear();
 
         ParseQuery<ParseEvent> query = ParseQuery.getQuery(ParseEvent.class);
         query.fromLocalDatastore();
-        query.orderByAscending("startDate");
         Date startDate = startCal.getTime();
         query.whereGreaterThanOrEqualTo("startDate", startDate);
         query.whereLessThanOrEqualTo("startDate", endCal.getTime());
+        query.whereNotEqualTo("inList", false);
+        query.orderByAscending("startDate");
+
         try {
             List<ParseEvent> list = query.find();
             //put query result into event list
@@ -54,21 +54,6 @@ public class ParseEventUtils {
             for (int i = 0; i < list.size(); i++) {
                 ParseEvent curObj = list.get(i);
 
-                //Check if it is from google calendar and determine the necessity of display
-                boolean isSkiped = false;
-                if("Google_Calendar".equals(curObj.getFrom())) {
-                    isSkiped = true;
-                    int googleCalendarListSize = googlePref.getInt("listSize", 0);
-                    for (int j = 0; j <googleCalendarListSize; j++) {
-                        String calendarName = googlePref.getString("calendar_" + j, null);
-                        if(calendarName.equals(curObj.getCalendarName())) isSkiped = false;
-                    }
-                }
-                if(isSkiped) {
-                    continue;
-                }
-
-                dataWrapper.eventMap.put(curObj.getObjectId(), curObj);
 
                 if (dataWrapper.eventList.size() >0 && hashCalDay(dataWrapper.eventList.get(dataWrapper.eventList.size()-1).get(0).getStartCal()) == hashCalDay(curObj.getStartCal())) {
                     List<ParseEvent> l = dataWrapper.eventList.get(dataWrapper.eventList.size() - 1);
@@ -82,7 +67,7 @@ public class ParseEventUtils {
             for (int i = 0; i < dataWrapper.eventList.size(); i++) {
                 java.util.Calendar cal = dataWrapper.eventList.get(i).get(0).getStartCal();
                 long day = hashCalDay(cal);
-                dataWrapper.positionMap.put(day, i);
+//                dataWrapper.positionMap.put(day, i);
                 dataWrapper.reversePositionMap.put(i, cal);
             }
 
@@ -118,7 +103,8 @@ public class ParseEventUtils {
         } else if(dir == DOWN) {
             query.whereGreaterThan("startDate", dataWrapper.downCal.getTime());
         }
-        query.setLimit(1);// TODO change limit
+        query.whereEqualTo("inList", true);
+//        query.setLimit(1);// TODO change limit
         try {
             List<ParseEvent> list = query.find();
             //put query result into event list
@@ -137,9 +123,9 @@ public class ParseEventUtils {
                 }
                 return;
             }
+            // process result list events;
             for (int i = 0; i < list.size(); i++) {
                 ParseEvent curObj = list.get(i);
-                dataWrapper.eventMap.put(curObj.getObjectId(), curObj);
 
                 if (newEventList.size() >0 && hashCalDay(newEventList.get(newEventList.size()-1).get(0).getStartCal()) == hashCalDay(curObj.getStartCal())) {
                     List<ParseEvent> l = newEventList.get(newEventList.size() - 1);
@@ -162,7 +148,7 @@ public class ParseEventUtils {
             for (int i = 0; i < dataWrapper.eventList.size(); i++) {
                 java.util.Calendar cal = dataWrapper.eventList.get(i).get(0).getStartCal();
                 long day = hashCalDay(cal);
-                dataWrapper.positionMap.put(day, i);
+//                dataWrapper.positionMap.put(day, i);
                 dataWrapper.reversePositionMap.put(i, cal);
             }
 
@@ -183,10 +169,38 @@ public class ParseEventUtils {
         }
     }
 
+    public static boolean enableOrDisableAllEventsForSpecificCalendarInNewThread(final String calendarName, final boolean enable) {
+        ParseQuery<ParseEvent> query = ParseQuery.getQuery(ParseEvent.class);
+        query.whereEqualTo("calendarName", calendarName);
+        query.findInBackground(new FindCallback<ParseEvent>() {
+            @Override
+            public void done(List<ParseEvent> events, ParseException e) {
+                if (e == null) {
+                    for (ParseEvent event : events) {
+                        if (enable) {
+                            event.setConfirmed();
+                        } else {
+                            event.setCancelled();
+                        }
+                        try {
+                            event.pin();
+                        } catch (ParseException e1) {
+                            e1.printStackTrace();
+                        }
+                        event.saveEventually();
+                    }
+                } else {
+                    Log.d("enabling or disabling query " + calendarName + " error: ", e.getMessage());
+                }
+            }
+        });
+        return true;
+    }
+
     public static void fetchParseEventFromServer(long syncToken) {
         ParseQuery<ParseEvent> query = ParseQuery.getQuery(ParseEvent.class);
         Date syncDate = new Date(syncToken);
-//        query.whereGreaterThanOrEqualTo("updateAt", syncDate);
+        query.whereGreaterThanOrEqualTo("updateAt", syncDate);
         try {
             List<ParseEvent> events = query.find();
             for (ParseEvent parseEvent : events) {

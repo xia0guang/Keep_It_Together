@@ -79,7 +79,7 @@ public class MainActivity extends ActionBarActivity {
         calendarView.setSelectedDate(today);
 
         //implement calendar view date changed listener
-        calendarView.setOnDateChangedListener(new OnDateChangedListener() {
+        /*calendarView.setOnDateChangedListener(new OnDateChangedListener() {
             @Override
             public void onDateChanged(MaterialCalendarView materialCalendarView, CalendarDay calendarDay) {
                 final int position = ((MyApplication)getApplication()).getPosition(calendarDay.getCalendar());
@@ -94,7 +94,7 @@ public class MainActivity extends ActionBarActivity {
                 }
                 calendarView.setSelectedDate(calendarDay.getCalendar());
             }
-        });
+        });*/
 
         //implement date change based on recycler view scrolling
         mRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -220,9 +220,10 @@ public class MainActivity extends ActionBarActivity {
         } else if(requestCode == REQUEST_SETTING && resultCode==RESULT_OK) {
             if(data.hasExtra("colorChanged")) {
 //                mAdapter.notifyItemRangeChanged(0, dataWrapper.eventList.size());
-                mAdapter = new EventAdapter(MainActivity.this, dataWrapper.eventList, userPref);
-                mRecyclerView.setAdapter(mAdapter);
-                Toast.makeText(this, "color setting changed", Toast.LENGTH_SHORT).show();
+            }
+            if(data.hasExtra("googleCalendarSettingChanged")) {
+                Toast.makeText(this, "google calendar changed", Toast.LENGTH_SHORT).show();
+                ParseEventUtils.firstTimeParseEventFromLocal(this);
             }
         }
     }
