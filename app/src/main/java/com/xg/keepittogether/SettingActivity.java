@@ -2,23 +2,34 @@ package com.xg.keepittogether;
 
 import android.accounts.AccountManager;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.DataSetObserver;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.ListAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -50,7 +61,8 @@ import java.util.Arrays;
 import java.util.List;
 
 
-public class SettingActivity extends Activity implements AdapterView.OnItemSelectedListener, MultiChoiceListDialogFragment.MultiChoiceListDialogListener{
+public class SettingActivity extends ActionBarActivity implements AdapterView.OnItemSelectedListener, MultiChoiceListDialogFragment.MultiChoiceListDialogListener{
+
 
 
     private SharedPreferences userPref;
@@ -98,6 +110,10 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
         colorView.setSelection(userPref.getInt("color", EventColor.BLUE));
         colorView.setOnItemSelectedListener(this);
 
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setDisplayHomeAsUpEnabled(true);
+        actionBar.setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.action_bar)));
+
         /**
          * Google Calendar Api inialization
         */
@@ -114,6 +130,46 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
         if(googlePref.getInt("listSize", 0) > 0) onOkClicked();
 
 
+    }
+
+    private class ColorApapter extends ArrayAdapter<String> {
+
+        LayoutInflater mInflater;
+        ArrayList<String> allColor = new ArrayList<>(
+                Arrays.asList("black", "blue", "cyan", "Gray", "Green", "Magenta", "Red", "Yellow", "Orange"));
+
+        public ColorApapter(Context context, int resource) {
+            super(context, resource);
+            mInflater = (LayoutInflater)context.getSystemService(LAYOUT_INFLATER_SERVICE);
+        }
+
+        @Override
+        public View getDropDownView(int position, View convertView,ViewGroup parent) {
+            return getCustomView(position, parent);
+        }
+
+        @Override
+        public int getCount() {
+            return allColor.size();
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            return getCustomView(position, parent);
+        }
+
+        public View getCustomView(int position, ViewGroup parent) {
+
+            View row = mInflater.inflate(R.layout.color_choose_spinner_row, parent, false);
+
+            TextView colorLabel = (TextView)row.findViewById(R.id.colorNameInSpinnerRow);
+            ImageView colorIcon = (ImageView)row.findViewById(R.id.colorIconInSpinnerRow);
+            Drawable circle = SettingActivity.this.getResources().getDrawable(R.drawable.circle);
+            circle.setColorFilter(EventColor.getColor(position), PorterDuff.Mode.SRC);
+            colorIcon.setImageDrawable(circle);
+            colorLabel.setText(allColor.get(position));
+            return row;
+        }
     }
 
     @Override
@@ -162,6 +218,62 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
         startActivity(intent);
     }
 
+    public void setCalendar(View view) {
+        if (isGooglePlayServicesAvailable()) {
+            getCalendarList();
+        } else {
+            Toast.makeText(this, "Google Play Services required: " + "after installing, close and relaunch this app.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void seeOthersColor(View view) {
+        ParseQuery<Member> queryMember = ParseQuery.getQuery(Member.class);
+        queryMember.findInBackground(new FindCallback<Member>() {
+            @Override
+            public void done(final List<Member> members, ParseException e) {
+                if (e == null && members.size() > 0) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(SettingActivity.this);
+                    builder.setAdapter(new ArrayAdapter<Member>(SettingActivity.this, R.layout.member_colors) {
+                        @Override
+                        public int getCount() {
+                            return members.size();
+                        }
+
+                        @Override
+                        public Member getItem(int position) {
+                            return members.get(position);
+                        }
+
+                        @Override
+                        public int getPosition(Member item) {
+                            return members.indexOf(item);
+                        }
+
+                        @Override
+                        public View getView(int position, View convertView, ViewGroup parent) {
+                            LayoutInflater mInflater = SettingActivity.this.getLayoutInflater();
+                            View row = mInflater.inflate(R.layout.member_colors, parent, false);
+                            TextView memberName = (TextView) row.findViewById(R.id.memberNameInMemberColorRow);
+                            memberName.setText(getItem(position).getMemberName());
+                            ImageView colorIcon = (ImageView) row.findViewById(R.id.colorIconInMemberColorsRow);
+                            Drawable circle = SettingActivity.this.getResources().getDrawable(R.drawable.circle);
+                            circle.setColorFilter(EventColor.getColor(getItem(position).getColor()), PorterDuff.Mode.SRC);
+                            colorIcon.setImageDrawable(circle);
+                            return row;
+                        }
+                    }, null);
+                    builder.setNegativeButton("Done", null);
+                    AlertDialog alertDialog = builder.create();
+                    alertDialog.show();
+                } else if (e != null) {
+                    Log.d("member query:", "Error" + e.getMessage());
+                }
+            }
+        });
+    }
+
+
+
     @Override
     public void onOkClicked() {
         TextView googleCalendarListView = (TextView)findViewById(R.id.googleCalendarSetting);
@@ -172,52 +284,6 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
         }
         googleCalendarListView.setText(calList);
         returnData.putExtra("googleCalendarSettingChanged", true);
-    }
-
-    private static class ColorApapter extends ArrayAdapter<String> {
-
-        LayoutInflater mInflater;
-        ArrayList<String> allColor = new ArrayList<>(
-                Arrays.asList("black", "blue", "cyan", "Gray", "Green", "Magenta", "Red", "Yellow", "Orange"));
-
-        public ColorApapter(Context context, int resource) {
-            super(context, resource);
-            mInflater = (LayoutInflater)context.getSystemService(LAYOUT_INFLATER_SERVICE);
-        }
-
-        @Override
-        public View getDropDownView(int position, View convertView,ViewGroup parent) {
-            return getCustomView(position, convertView, parent);
-        }
-
-        @Override
-        public int getCount() {
-            return allColor.size();
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            return getCustomView(position, convertView, parent);
-        }
-
-        public View getCustomView(int position, View convertView, ViewGroup parent) {
-
-            View row = mInflater.inflate(R.layout.color_choose_spinner_row, parent, false);
-
-            TextView colorLabel = (TextView)row.findViewById(R.id.colorNameInSpinnerRow);
-            ImageView colorIcon = (ImageView)row.findViewById(R.id.colorIconInSpinnerRow);
-            colorLabel.setText(allColor.get(position));
-            colorIcon.setBackgroundColor(EventColor.getColor(position));
-            return row;
-        }
-    }
-
-    public void setCalendar(View view) {
-        if (isGooglePlayServicesAvailable()) {
-            getCalendarList();
-        } else {
-           Toast.makeText(this, "Google Play Services required: " + "after installing, close and relaunch this app.", Toast.LENGTH_SHORT).show();
-        }
     }
 
     @Override
@@ -268,6 +334,22 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
         super.onActivityResult(requestCode, resultCode, data);
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_setting, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if(id == R.id.save_in_setting) {
+            finish();
+            return true;
+        }
+        return true;
+    }
+
     /**
      * Attempt to get a list of calendar events to display. If the email
      * address isn't known yet, then call chooseAccount() method so the user
@@ -297,7 +379,7 @@ public class SettingActivity extends Activity implements AdapterView.OnItemSelec
                                     SettingActivity.REQUEST_AUTHORIZATION);
 
                         } catch (IOException e) {
-                            Log.d("The following error occurred: ",e.getMessage());
+                            Log.d("error occurred: ",e.getMessage());
                         }
                         return null;
                     }

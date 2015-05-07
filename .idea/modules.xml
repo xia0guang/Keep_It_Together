@@ -4,7 +4,9 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/KeepItTogether.iml" filepath="$PROJECT_DIR$/KeepItTogether.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/calendarViewLibrary/calendarViewLibrary.iml" filepath="$PROJECT_DIR$/calendarViewLibrary/calendarViewLibrary.iml" />
+      <module fileurl="file://$PROJECT_DIR$/floatingActionButtonLibrary/floatingActionButtonLibrary.iml" filepath="$PROJECT_DIR$/floatingActionButtonLibrary/floatingActionButtonLibrary.iml" />
+      <module fileurl="file://$PROJECT_DIR$/materialCalendarVeiwLibrary/materialCalendarVeiwLibrary.iml" filepath="$PROJECT_DIR$/materialCalendarVeiwLibrary/materialCalendarVeiwLibrary.iml" />
+      <module fileurl="file://$PROJECT_DIR$/textDrawableLibrary/textDrawableLibrary.iml" filepath="$PROJECT_DIR$/textDrawableLibrary/textDrawableLibrary.iml" />
     </modules>
   </component>
 </project>

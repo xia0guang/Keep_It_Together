@@ -229,6 +229,50 @@ public class GoogleCalendarUtils {
         return true;
     }
 
+    public static boolean insertSingleEventInNewThread(final Context context,final String calendarId, final ParseEvent parseEvent) throws IOException {
+        try {
+            GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
+                    context, Arrays.asList(SCOPESUPDATE))
+                    .setBackOff(new ExponentialBackOff())
+                    .setSelectedAccountName(userPref.getString(PREF_ACCOUNT_NAME, null));
+
+            mService = new com.google.api.services.calendar.Calendar.Builder(
+                    transport, jsonFactory, credential)
+                    .setApplicationName("Keep Together")
+                    .build();
+
+        } catch (Throwable t) {
+            t.printStackTrace();
+            System.exit(1);
+        }
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                Event event = new Event();
+                event.setSummary(parseEvent.getTitle());
+                event.setDescription(parseEvent.getNote());
+                EventDateTime startDateTime = new EventDateTime();
+                startDateTime.setDateTime(new DateTime(parseEvent.getStartDate()));
+                event.setStart(startDateTime);
+                EventDateTime endDateTime = new EventDateTime();
+                endDateTime.setDateTime(new DateTime(parseEvent.getEndDate()));
+                event.setEnd(endDateTime);
+                try {
+                    Event createdEvent = mService.events().insert(calendarId, event).execute();
+                    Log.d("update event: ", createdEvent.getUpdated().toString());
+                }catch (UserRecoverableAuthIOException e) {
+                    ((AddEventActivity)context).startActivityForResult(e.getIntent(), REQUEST_AUTHORIZATION);
+                }catch (IOException e) {
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+
+                return null;
+            }
+        }.execute();
+        return true;
+    }
+
     public static boolean deleteSingleEventInNewThread(final Context context,final String calendarId, final String eventId) throws IOException {
         try {
             GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(

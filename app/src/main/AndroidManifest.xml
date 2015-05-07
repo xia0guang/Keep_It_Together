@@ -46,7 +46,11 @@
             android:name=".SettingActivity"
             android:configChanges="orientation"
             android:label="@string/title_activity_setting"
-            android:screenOrientation="portrait" >
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.xg.keepittogether.MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.xg.keepittogether.MainActivity" />
         </activity>
         <activity
             android:name=".AddEventActivity"

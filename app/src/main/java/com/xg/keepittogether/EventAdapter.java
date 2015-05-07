@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
@@ -12,9 +13,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.amulyakhare.textdrawable.TextDrawable;
 import com.xg.keepittogether.Parse.ParseEvent;
+import com.xg.keepittogether.Parse.ParseEventUtils;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -41,13 +45,14 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
 
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        // each data item is just a string in this case
         private ViewGroup rowViewGroup;
         private TextView startDateView;
+        private ImageView longDivider;
         private List<SubViewHolder> elementHolderList;
         public ViewHolder(View view) {
             super(view);
             startDateView = (TextView)view.findViewById(R.id.eventStartTimeInRow);
+            longDivider = (ImageView)view.findViewById(R.id.long_divider);
             rowViewGroup = (ViewGroup)view.findViewById(R.id.rowView);
             elementHolderList = new ArrayList<>();
         }
@@ -59,16 +64,17 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
 
     public static class SubViewHolder extends RecyclerView.ViewHolder {
 
-        private TextView startTimeView, endView, titleView, memberNameView, indicateView;
+        private TextView startToEndView, titleView;
+        private ImageView memberIcon, shortDivider, indicateView;
         private ViewGroup elementView;
         public SubViewHolder(View view) {
             super(view);
-            startTimeView = (TextView)view.findViewById(R.id.eventStartTimeInElement);
-            endView = (TextView)view.findViewById(R.id.eventEndTimeInElement);
+            startToEndView = (TextView)view.findViewById(R.id.eventStartTimeToEndTimeTV);
             titleView = (TextView)view.findViewById(R.id.eventTitleInElement);
-            indicateView = (TextView)view.findViewById(R.id.indicateGoogleCalendarTV);
-            memberNameView = (TextView)view.findViewById(R.id.memberNameInElement);
+            indicateView = (ImageView)view.findViewById(R.id.indicateGoogleCalendarImage);
+            memberIcon = (ImageView)view.findViewById(R.id.memberIcon);
             elementView = (ViewGroup)view.findViewById(R.id.elementView);
+            shortDivider = (ImageView)view.findViewById(R.id.short_divider);
         }
 
     }
@@ -79,18 +85,16 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.event_row, parent, false);
         ViewHolder vh = new ViewHolder(v);
-
-
+        Drawable longDivider = context.getResources().getDrawable(R.drawable.divider);
+        vh.longDivider.setImageDrawable(longDivider);
         for (int i = 0; i < viewType; i++) {
-            Drawable divider = context.getResources().getDrawable(R.drawable.divider);
-            ImageView dividerView = new ImageView(context);
-            dividerView.setImageDrawable(divider);
-            vh.addElement(dividerView);
-
             View element = LayoutInflater.from(context).inflate(R.layout.element, vh.rowViewGroup, false);
             vh.addElement(element);
             SubViewHolder elementHolder = new SubViewHolder(element);
             vh.elementHolderList.add(elementHolder);
+            if(i == viewType-1) {
+                elementHolder.shortDivider.setVisibility(View.GONE);
+            }
         }
         return vh;
     }
@@ -106,22 +110,45 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
 
         ParseEvent headParseEvent = list.get(0);
         Calendar startCal = headParseEvent.getStartCal();
-        holder.startDateView.setText(String.format("%tD", startCal));
+        String[] weekdayList = context.getResources().getStringArray(R.array.weekday_list);
+        holder.startDateView.setText(weekdayList[startCal.get(Calendar.WEEK_OF_MONTH)] + String.format(", %tD", startCal));
 
         for (int i = 0; i < list.size(); i++) {
             final ParseEvent parseEvent = list.get(i);
             Calendar startTimeCal = parseEvent.getStartCal();
-            holder.elementHolderList.get(i).startTimeView.setText(String.format("%tl:%tM %tp", startTimeCal, startTimeCal, startTimeCal));
+
+            String startToEndStr = String.format("%tl:%tM %tp - ", startTimeCal, startTimeCal, startTimeCal);
             Calendar endCal = parseEvent.getEndCal();
-            holder.elementHolderList.get(i).endView.setText(String.format("%tD  %tl:%tM %tp", endCal, endCal, endCal, endCal));
+            if(ParseEventUtils.hashCalDay(startCal) == ParseEventUtils.hashCalDay(endCal)) {
+                startToEndStr += String.format("%tl:%tM %tp", endCal, endCal, endCal);
+            }else if(ParseEventUtils.hashCalDay(startCal) == ParseEventUtils.hashCalDay(endCal) + 1) {
+                startToEndStr += String.format("tomorrow %tl:%tM %tp", endCal, endCal, endCal);
+            } else {
+                startToEndStr += String.format("%tD  %tl:%tM %tp", endCal, endCal, endCal, endCal);
+            }
+            holder.elementHolderList.get(i).startToEndView.setText(startToEndStr);
             holder.elementHolderList.get(i).titleView.setText(parseEvent.getTitle());
             if ("Google_Calendar".equals(parseEvent.getFrom())) {
-                holder.elementHolderList.get(i).indicateView.setText("Google");
+                //TODO solve this
+                Drawable googleIcon = context.getResources().getDrawable(R.drawable.google_icon);
+                holder.elementHolderList.get(i).indicateView.setImageDrawable(googleIcon);
+                holder.elementHolderList.get(i).indicateView.setVisibility(View.VISIBLE);
             } else {
-                holder.elementHolderList.get(i).indicateView.setText("");
+                holder.elementHolderList.get(i).indicateView.setVisibility(View.GONE);
             }
-            holder.elementHolderList.get(i).memberNameView.setText("@" + parseEvent.getMemberName());
-            holder.elementHolderList.get(i).memberNameView.setBackgroundColor(EventColor.getColor(userPref.getInt("color." + parseEvent.getString("memberName"), 1)));
+
+            // draw member icon
+            String[] names = parseEvent.getMemberName().split(" +");
+            String nameInit = "";
+            for (int j = 0; j < names.length; j++) {
+                nameInit += names[j].substring(0,1).toUpperCase();
+            }
+            int color = EventColor.getColor(userPref.getInt("color." + parseEvent.getString("memberName"), 1));
+            TextDrawable drawable = TextDrawable.builder().buildRound(nameInit, color);
+            holder.elementHolderList.get(i).memberIcon.setImageDrawable(drawable);
+
+            Drawable shortDivider = context.getResources().getDrawable(R.drawable.short_divider);
+            holder.elementHolderList.get(i).shortDivider.setImageDrawable(shortDivider);
             //TODO change color based on google calendar
             if (parseEvent.getMemberName().equals(userPref.getString("memberName", null))) {
                 holder.elementHolderList.get(i).elementView.setOnClickListener(new View.OnClickListener() {

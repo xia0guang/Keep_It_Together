@@ -22,7 +22,7 @@ public class DispatchActivity extends Activity {
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
             startActivity(intent);
-            overridePendingTransition(0,0);
+
         } else {
             // Start and intent for the logged out activity
             Intent intent = new Intent(this, LoginActivity.class);
@@ -32,4 +32,9 @@ public class DispatchActivity extends Activity {
         }
     }
 
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0,0);
+    }
 }

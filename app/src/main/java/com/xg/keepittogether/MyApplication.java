@@ -9,6 +9,7 @@ import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParsePush;
 import com.parse.SaveCallback;
+import com.prolificinteractive.materialcalendarview.DayViewDecorator;
 import com.xg.keepittogether.Parse.Member;
 import com.xg.keepittogether.Parse.ParseEvent;
 
@@ -27,15 +28,18 @@ public class MyApplication extends Application {
 
     public static class DataWrapper{
         public List<List<ParseEvent>> eventList;
+        public List<DayViewDecorator> decorators;
 //        public HashMap<Long, Integer> positionMap;
         public HashMap<Integer, Calendar> reversePositionMap;
 //        public HashMap<String, ParseEvent> eventMap;
         public Calendar upCal, upThresholdCal, downCal, downThresholdCal;
         public boolean upFetch, downFetch, loading;
+
         DataWrapper() {
-            eventList = new ArrayList<List<ParseEvent>>();
+            eventList = new ArrayList<>();
 //            positionMap = new HashMap<>();
             reversePositionMap = new HashMap<>();
+            decorators = new ArrayList<>();
 //            eventMap = new HashMap<>();
             upCal = Calendar.getInstance();
             upThresholdCal = Calendar.getInstance();
@@ -79,19 +83,6 @@ public class MyApplication extends Application {
         });
 
 
-    }
-
-    /*public int getPosition(Calendar cal) {
-        long day = (cal.get(Calendar.YEAR) - 1970)*366 + cal.get(Calendar.MONTH) * 31 + cal.get(Calendar.DAY_OF_MONTH);
-
-        return -1;
-    }*/
-
-    public Calendar getCalendarByPosition(int position) {
-        if(position >= 0 && position < dataWrapper.eventList.size()) {
-            return dataWrapper.reversePositionMap.get(position);
-        }
-        return null;
     }
 
 }

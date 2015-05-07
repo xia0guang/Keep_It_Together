@@ -6,19 +6,16 @@ import android.app.DialogFragment;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
 
-import com.parse.GetCallback;
 import com.parse.ParseACL;
 import com.parse.ParseException;
 import com.parse.ParseInstallation;
@@ -37,7 +34,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 
 
@@ -49,8 +45,6 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
     Bundle bundle;
 
     int[] alertTimeList = {-1, 0, 5, 30, 60, 120, 1440};
-    String[] weekdayList = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
-    String[] alertTimeSpinnerList = {"Off", "At time of event", "5 minutes before", "half hour before", "1 hour before", "2 hours before", "1 day before"};
     private Calendar startCal, endCal, alertCal;
 
     private TextView startDateView;
@@ -61,10 +55,12 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
     private EditText noteView;
     private Spinner alertTimeSpinner;
     private Switch notifyOtherSwitch;
+    private Switch uploadToGoogleCalendarSwitch;
 
     private MyApplication.DataWrapper dataWrapper;
 
     private boolean notifyOther = false;
+    private boolean uploadToGoogleCalendar = false;
     private boolean changedStartDate = false;
     private int returnDayPosition = 0;
 
@@ -92,25 +88,36 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
                 notifyOther = !notifyOther;
             }
         });
+        uploadToGoogleCalendarSwitch = (Switch)findViewById(R.id.uploadToGoogleSwitch);
+        uploadToGoogleCalendarSwitch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                uploadToGoogleCalendar = !uploadToGoogleCalendar;
+            }
+        });
+
 
         LinearLayout addLayout = (LinearLayout)findViewById(R.id.add_event_BT_layout);
         LinearLayout saveLayout = (LinearLayout)findViewById(R.id.save_event_BT_layout);
         LinearLayout deleteLayout = (LinearLayout)findViewById(R.id.delete_event_BT_layout);
-        if(bundle != null) {
-            addLayout.setVisibility(View.GONE);
-            saveLayout.setVisibility(View.VISIBLE);
-            deleteLayout.setVisibility(View.VISIBLE);
-        }
 
         startCal = Calendar.getInstance();
         endCal = Calendar.getInstance();
         if (bundle == null) {
             endCal.set(Calendar.HOUR_OF_DAY, endCal.get(Calendar.HOUR_OF_DAY) + 1);
+
+            addLayout.setVisibility(View.VISIBLE);
+            saveLayout.setVisibility(View.GONE);
+            deleteLayout.setVisibility(View.GONE);
         } else {
             startCal.setTimeInMillis(bundle.getLong("startDate"));
             endCal.setTimeInMillis(bundle.getLong("endDate"));
             titleView.setText(bundle.getString("title"));
             noteView.setText(bundle.getString("note"));
+
+            addLayout.setVisibility(View.GONE);
+            saveLayout.setVisibility(View.VISIBLE);
+            deleteLayout.setVisibility(View.VISIBLE);
         }
         setEventDateView(startDateView, startCal);
         setEventTimeView(startTimeView, startCal);
@@ -118,6 +125,7 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
         setEventTimeView(endTimeView, endCal);
 
         alertTimeSpinner = (Spinner)findViewById(R.id.eventAlertSpinner);
+        String[] alertTimeSpinnerList = getResources().getStringArray(R.array.alert_time_spinner_list);
         ArrayAdapter<String> alertSpinnerAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, alertTimeSpinnerList);
         alertTimeSpinner.setAdapter(alertSpinnerAdapter);
     }
@@ -144,6 +152,17 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
         }
 
         //TODO add to google calendar if option is on
+        if(uploadToGoogleCalendar && bundle == null) {
+            try {
+                GoogleCalendarUtils.insertSingleEventInNewThread(this, "primary", parseEvent);
+                parseEvent.setCancelled();
+                parseEvent.saveEventually();
+                parseEvent.pinInBackground();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         // set alert
         int minuteOffset = alertTimeList[alertTimeSpinner.getSelectedItemPosition()];
         if (minuteOffset >= 0) {
@@ -153,6 +172,13 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
                 && ParseEventUtils.hashCalDay(startCal) <= ParseEventUtils.hashCalDay(dataWrapper.eventList.get(dataWrapper.eventList.size()-1).get(0).getStartCal()))
         {
             updateEventList(parseEvent);
+        } else {
+            if(startCal.compareTo(dataWrapper.eventList.get(0).get(0).getStartCal()) < 0) {
+                dataWrapper.upFetch = true;
+            }
+            if(ParseEventUtils.hashCalDay(startCal) > ParseEventUtils.hashCalDay(dataWrapper.eventList.get(dataWrapper.eventList.size()-1).get(0).getStartCal())) {
+                dataWrapper.downFetch = true;
+            }
         }
 
         finish();
@@ -173,6 +199,9 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
                 }
             }
             event.setTitle(titleView.getText().toString());
+            if(!startCal.equals(event.getStartCal())) {
+                changedStartDate = true;
+            }
             event.setStartDate(startCal);
             event.setEndDate(endCal);
             event.setNote(noteView.getText().toString());
@@ -184,6 +213,13 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
                         && ParseEventUtils.hashCalDay(startCal) <= ParseEventUtils.hashCalDay(dataWrapper.eventList.get(dataWrapper.eventList.size()-1).get(0).getStartCal()))
                 {
                     updateEventList(event);
+                } else {
+                    if(startCal.compareTo(dataWrapper.eventList.get(0).get(0).getStartCal()) < 0) {
+                        dataWrapper.upFetch = true;
+                    }
+                    if(ParseEventUtils.hashCalDay(startCal) > ParseEventUtils.hashCalDay(dataWrapper.eventList.get(dataWrapper.eventList.size()-1).get(0).getStartCal())) {
+                        dataWrapper.downFetch = true;
+                    }
                 }
             }
 
@@ -226,8 +262,6 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
             event.setCancelled();
             event.saveEventually();
             event.pinInBackground();
-//            event.deleteEventually();
-//            event.unpin();
 
             int originalDayPosition = bundle.getInt("listPosition");
             List<ParseEvent> parseEventDayList = dataWrapper.eventList.get(originalDayPosition);
@@ -336,7 +370,7 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
     }
 
     private void setEventDateView(TextView dateView, Calendar cal) {
-//        dateView.setText(weekdayList[calendar.get(Calendar.WEEK_OF_MONTH)] + ", " + monthsList[calendar.get(Calendar.MONTH)] + " " + calendar.get(Calendar.DAY_OF_MONTH) + ", " + calendar.get(Calendar.YEAR));
+        String[] weekdayList = getResources().getStringArray(R.array.weekday_list);
         dateView.setText(weekdayList[cal.get(Calendar.WEEK_OF_MONTH)] + String.format(", %tB %te, %tY", cal, cal, cal));
     }
 
@@ -402,7 +436,6 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
 
     @Override
     public void finish() {
-        //TODO add name prefix
         Intent data = new Intent();
         data.putExtra("changedPosition", returnDayPosition);
         // Activity finished ok, return the data

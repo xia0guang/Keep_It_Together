@@ -6,9 +6,14 @@ import android.content.SharedPreferences;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.api.services.calendar.model.Event;
 import com.parse.FindCallback;
 import com.parse.ParseException;
 import com.parse.ParseQuery;
+import com.prolificinteractive.materialcalendarview.CalendarDay;
+import com.prolificinteractive.materialcalendarview.DayViewDecorator;
+import com.xg.keepittogether.EventColor;
+import com.xg.keepittogether.EventIndicateDecorator;
 import com.xg.keepittogether.MainActivity;
 import com.xg.keepittogether.MyApplication;
 
@@ -85,6 +90,8 @@ public class ParseEventUtils {
             dataWrapper.downThresholdCal.setTimeInMillis(thresholdList.get(thresholdList.size()-1).getStartCal().getTimeInMillis());
             dataWrapper.upFetch = true;
             dataWrapper.downFetch = true;
+
+            buildDecorators(activity);
 
         } catch (ParseException e) {
             e.printStackTrace();
@@ -164,6 +171,7 @@ public class ParseEventUtils {
                 dataWrapper.downThresholdCal.setTimeInMillis(thresholdList.get(thresholdList.size()-1).getStartCal().getTimeInMillis());
             }
 
+            buildDecorators(activity);
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -260,6 +268,31 @@ public class ParseEventUtils {
 
     public static long hashCalDay(Calendar cal) {
         return (long) ((cal.get(Calendar.YEAR) - 1970) * 366 + cal.get(Calendar.MONTH) * 31 + cal.get(Calendar.DAY_OF_MONTH));
+    }
+
+    public static void buildDecorators(final Activity activity) {
+        final MyApplication.DataWrapper dataWrapper = ((MyApplication)activity.getApplication()).dataWrapper;
+        SharedPreferences userPref = activity.getSharedPreferences("User_Preferences", Context.MODE_PRIVATE);
+        dataWrapper.decorators.clear();
+        for(int i=0; i<dataWrapper.eventList.size(); i++) {
+            List<ParseEvent> list = dataWrapper.eventList.get(i);
+            Calendar cal = list.get(0).getStartCal();
+            CalendarDay day = new CalendarDay(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
+            EventIndicateDecorator decorator = new EventIndicateDecorator("●", day);
+            for (int j = 0; j <list.size(); j++) {
+                ParseEvent event = list.get(j);
+                int color = EventColor.getColor(userPref.getInt("color." + event.getMemberName(), 1));
+                decorator.addColor(color);
+            }
+            dataWrapper.decorators.add(decorator);
+        }
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ((MainActivity)activity).calendarView.addDecorators(dataWrapper.decorators);
+                ((MainActivity)activity).calendarView.invalidateDecorators();
+            }
+        });
     }
 
 }

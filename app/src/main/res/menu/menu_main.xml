@@ -17,15 +17,9 @@
         android:orderInCategory="100"
         app:showAsAction="never"/>
     <item android:id="@+id/action_today"
-        android:title="today"
+        android:title="Today"
         app:showAsAction="never"/>
     <item android:id="@+id/action_sync_with_server"
-        android:title="sync"
-        app:showAsAction="never"/>
-    <item android:id="@+id/action_scroll_to_bottom"
-        android:title="scroll"
-        app:showAsAction="never"/>
-    <item android:id="@+id/action_scroll_to_top"
-        android:title="scrollTop"
+        android:title="Sync manually"
         app:showAsAction="never"/>
 </menu>

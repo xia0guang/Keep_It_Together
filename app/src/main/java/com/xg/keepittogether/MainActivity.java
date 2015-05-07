@@ -5,11 +5,15 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Toast;
 
 import com.google.api.client.googleapis.extensions.android.gms.auth.GooglePlayServicesAvailabilityIOException;
@@ -26,6 +30,7 @@ import com.xg.keepittogether.Parse.Member;
 import com.xg.keepittogether.Parse.ParseEventUtils;
 
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.List;
 
 
@@ -34,8 +39,8 @@ public class MainActivity extends ActionBarActivity {
     private SharedPreferences userPref;
     private SharedPreferences googlePref;
 
-    private RecyclerView mRecyclerView;
-    private MaterialCalendarView calendarView;
+    public RecyclerView mRecyclerView;
+    public MaterialCalendarView calendarView;
     public EventAdapter mAdapter;
 
     public static final int REQUEST_ADD_OR_CHANGE_NEW_EVENT = 0;
@@ -63,13 +68,17 @@ public class MainActivity extends ActionBarActivity {
 
         //RecyclerView initialization
         mRecyclerView = (RecyclerView) findViewById(R.id.recycleView);
+
+        mRecyclerView.setItemAnimator(new DefaultItemAnimator());
+
         mRecyclerView.setHasFixedSize(true);
         // use a linear layout manager
-        LinearLayoutManager mLayoutManager = new LinearLayoutManager(this);
+        final LinearLayoutManager mLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLayoutManager);
         //setAdapter
         mAdapter = new EventAdapter(MainActivity.this, dataWrapper.eventList, userPref);
         mRecyclerView.setAdapter(mAdapter);
+
 
 
         //set CalendarView
@@ -78,23 +87,38 @@ public class MainActivity extends ActionBarActivity {
         java.util.Calendar today = java.util.Calendar.getInstance();
         calendarView.setSelectedDate(today);
 
+
+
         //implement calendar view date changed listener
-        /*calendarView.setOnDateChangedListener(new OnDateChangedListener() {
+        final OnDateChangedListener mOnDateChangedListener = new OnDateChangedListener() {
             @Override
             public void onDateChanged(MaterialCalendarView materialCalendarView, CalendarDay calendarDay) {
-                final int position = ((MyApplication)getApplication()).getPosition(calendarDay.getCalendar());
-                System.out.println("Position is " + position);
-                if (position >= 0) {
-                    MainActivity.this.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mRecyclerView.smoothScrollToPosition(1);
-                        }
-                    });
+                for (int i = 0; i < dataWrapper.eventList.size(); i++) {//limit size is 10000 or it will lag
+                    Calendar changedCal = calendarDay.getCalendar();
+                    Calendar curCal = dataWrapper.eventList.get(i).get(0).getStartCal();
+                    if (ParseEventUtils.hashCalDay(curCal) >= ParseEventUtils.hashCalDay(changedCal)) {
+                        mLayoutManager.scrollToPositionWithOffset(i, 0);
+                        final int position = i;
+                        mRecyclerView.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                View row = null;
+                                int j = 0;
+                                while(row == null) {
+                                    row = mLayoutManager.findViewByPosition(position);
+                                    Log.d("loop:", j++ + "");
+                                }
+                                Animation blink = AnimationUtils.loadAnimation(MainActivity.this, R.anim.blink);
+                                if(row != null)row.startAnimation(blink);
+                            }
+                        }, 100);
+                        break;
+                    }
                 }
-                calendarView.setSelectedDate(calendarDay.getCalendar());
             }
-        });*/
+        };
+
+        calendarView.setOnDateChangedListener(mOnDateChangedListener);
 
         //implement date change based on recycler view scrolling
         mRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -103,33 +127,33 @@ public class MainActivity extends ActionBarActivity {
                 super.onScrollStateChanged(recyclerView, newState);
             }
 
+
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
-                LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
-                int firstPosition = layoutManager.findFirstVisibleItemPosition();
-                java.util.Calendar firstCal = ((MyApplication) getApplication()).getCalendarByPosition(firstPosition);
-                calendarView.setSelectedDate(firstCal);
 
+                calendarView.setOnDateChangedListener(null);
                 if (!dataWrapper.loading) {
+                    super.onScrolled(recyclerView, dx, dy);
+                    LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                    int firstPosition = layoutManager.findFirstVisibleItemPosition();
+                    java.util.Calendar firstCal = dataWrapper.reversePositionMap.get(firstPosition);
+                    calendarView.setSelectedDate(firstCal);
                     if (dy > 0 && dataWrapper.downFetch) {
-                        System.out.println("upScrolling");
                         int lastPosition = layoutManager.findLastVisibleItemPosition();
-                        java.util.Calendar lastCal = ((MyApplication) getApplication()).getCalendarByPosition(lastPosition);
-                        if(lastCal.compareTo(dataWrapper.downThresholdCal) >= 0) {
+                        java.util.Calendar lastCal = dataWrapper.reversePositionMap.get(lastPosition);
+                        if (lastCal.compareTo(dataWrapper.downThresholdCal) >= 0) {
                             new LoadMoreEvent().execute(ParseEventUtils.DOWN);
                         }
                     }
-                    if(dy < 0 && dataWrapper.upFetch) {
-                        System.out.println("downScrolling");
-                        if(firstCal.compareTo(dataWrapper.upThresholdCal) <= 0) {
+                    if (dy < 0 && dataWrapper.upFetch) {
+                        if (firstCal.compareTo(dataWrapper.upThresholdCal) <= 0) {
                             new LoadMoreEvent().execute(ParseEventUtils.UP);
                         }
                     }
                 }
+                calendarView.setOnDateChangedListener(mOnDateChangedListener);
             }
         });
-
 
         ParseEventUtils.firstTimeParseEventFromLocal(this);
         int listSize = googlePref.getInt("listSize", 0);
@@ -172,7 +196,7 @@ public class MainActivity extends ActionBarActivity {
                                 userRecoverableException.getIntent(),
                                 SettingActivity.REQUEST_AUTHORIZATION);
                     } catch (IOException e) {
-                        Log.d("The following error occurred: ",e.getMessage());
+                        Log.d("error occurred: ",e.getMessage());
                     } catch (ParseException pe) {
                         pe.printStackTrace();
                     }
@@ -215,11 +239,10 @@ public class MainActivity extends ActionBarActivity {
             if(data.hasExtra("changedPosition") ){
 //                mAdapter.notifyItemInserted(data.getIntExtra("changedPosition", 0));
                 mAdapter.notifyDataSetChanged();
-                Toast.makeText(this, "add/change event completed", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(this, "add/change event completed", Toast.LENGTH_SHORT).show();
             }
         } else if(requestCode == REQUEST_SETTING && resultCode==RESULT_OK) {
             if(data.hasExtra("colorChanged")) {
-//                mAdapter.notifyItemRangeChanged(0, dataWrapper.eventList.size());
             }
             if(data.hasExtra("googleCalendarSettingChanged")) {
                 Toast.makeText(this, "google calendar changed", Toast.LENGTH_SHORT).show();
@@ -251,6 +274,7 @@ public class MainActivity extends ActionBarActivity {
         if (id == R.id.action_add_new_event) {
             Intent addEventIntent = new Intent(this, AddEventActivity.class);
             startActivityForResult(addEventIntent, REQUEST_ADD_OR_CHANGE_NEW_EVENT);
+
             return true;
         }
         if (id == R.id.action_today) {
@@ -269,14 +293,6 @@ public class MainActivity extends ActionBarActivity {
                 String memberName = userPref.getString("memberName", null);
                 ParseEventUtils.fetchEventInNewThread(this, memberName);
             }
-        }
-
-        if(id == R.id.action_scroll_to_bottom) {
-            mRecyclerView.smoothScrollToPosition(6);
-        }
-
-        if(id == R.id.action_scroll_to_top) {
-            mRecyclerView.smoothScrollToPosition(0);
         }
 
         return super.onOptionsItemSelected(item);
