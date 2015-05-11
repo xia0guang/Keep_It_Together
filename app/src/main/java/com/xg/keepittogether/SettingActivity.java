@@ -116,7 +116,7 @@ public class SettingActivity extends ActionBarActivity implements AdapterView.On
         actionBar.setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.action_bar)));
 
         /**
-         * Google Calendar Api inialization
+         * Google Calendar API inialization
         */
         credential = GoogleAccountCredential.usingOAuth2(
                 getApplicationContext(), Arrays.asList(SCOPES))
@@ -290,7 +290,8 @@ public class SettingActivity extends ActionBarActivity implements AdapterView.On
     @Override
     public void finish() {
         if (colorChanged) {
-            returnData.putExtra("colorChanged", true);//TODO change place color to color setting
+            //TODO change place color to color setting
+            returnData.putExtra("colorChanged", true);
             setResult(RESULT_OK, returnData);
         }
         super.finish();
