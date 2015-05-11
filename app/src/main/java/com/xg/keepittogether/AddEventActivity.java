@@ -151,7 +151,6 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
             }
         }
 
-        //TODO add to google calendar if option is on
         if(uploadToGoogleCalendar && bundle == null) {
             try {
                 GoogleCalendarUtils.insertSingleEventInNewThread(this, "primary", parseEvent);

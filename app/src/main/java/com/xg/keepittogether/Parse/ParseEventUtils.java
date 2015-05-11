@@ -111,7 +111,7 @@ public class ParseEventUtils {
             query.whereGreaterThan("startDate", dataWrapper.downCal.getTime());
         }
         query.whereEqualTo("inList", true);
-//        query.setLimit(1);// TODO change limit
+        query.setLimit(50);
         try {
             List<ParseEvent> list = query.find();
             //put query result into event list
@@ -236,7 +236,7 @@ public class ParseEventUtils {
 
                     //from local
                     firstTimeParseEventFromLocal(activity);
-                    Toast.makeText(activity, "query done", Toast.LENGTH_LONG).show();
+//                    Toast.makeText(activity, "query done", Toast.LENGTH_LONG).show();
                 } else {
                     Log.d("fetch error: ", e.getMessage());
                 }

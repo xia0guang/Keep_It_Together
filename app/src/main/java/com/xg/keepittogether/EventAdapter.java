@@ -129,7 +129,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
             holder.elementHolderList.get(i).startToEndView.setText(startToEndStr);
             holder.elementHolderList.get(i).titleView.setText(parseEvent.getTitle());
             if ("Google_Calendar".equals(parseEvent.getFrom())) {
-                //TODO solve this
                 Drawable googleIcon = context.getResources().getDrawable(R.drawable.google_icon);
                 holder.elementHolderList.get(i).indicateView.setImageDrawable(googleIcon);
                 holder.elementHolderList.get(i).indicateView.setVisibility(View.VISIBLE);

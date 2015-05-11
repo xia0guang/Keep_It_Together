@@ -22,9 +22,6 @@ public class AlertService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Bundle bundle = intent.getExtras();
 
-//        Log.d("Notification service?", "works");
-//        Toast.makeText(getApplicationContext(), "Alert works", Toast.LENGTH_LONG).show();
-
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this);
         mBuilder.setSmallIcon(R.drawable.ic_launcher);
         mBuilder.setTicker("Here comes event!");

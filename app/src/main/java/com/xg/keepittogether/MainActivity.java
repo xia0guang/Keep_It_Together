@@ -2,8 +2,10 @@ package com.xg.keepittogether;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.drawable.ColorDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
@@ -64,6 +66,9 @@ public class MainActivity extends ActionBarActivity {
         parseInstallation.put("memberName", getSharedPreferences("User_Preferences", MODE_PRIVATE).getString("memberName", null));
         parseInstallation.saveInBackground();
 
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.action_bar)));
+
 
 
         //RecyclerView initialization
@@ -93,6 +98,7 @@ public class MainActivity extends ActionBarActivity {
         final OnDateChangedListener mOnDateChangedListener = new OnDateChangedListener() {
             @Override
             public void onDateChanged(MaterialCalendarView materialCalendarView, CalendarDay calendarDay) {
+                calendarView.setCurrentDate(calendarDay);
                 for (int i = 0; i < dataWrapper.eventList.size(); i++) {//limit size is 10000 or it will lag
                     Calendar changedCal = calendarDay.getCalendar();
                     Calendar curCal = dataWrapper.eventList.get(i).get(0).getStartCal();
@@ -106,7 +112,6 @@ public class MainActivity extends ActionBarActivity {
                                 int j = 0;
                                 while(row == null) {
                                     row = mLayoutManager.findViewByPosition(position);
-                                    Log.d("loop:", j++ + "");
                                 }
                                 Animation blink = AnimationUtils.loadAnimation(MainActivity.this, R.anim.blink);
                                 if(row != null)row.startAnimation(blink);
@@ -278,6 +283,12 @@ public class MainActivity extends ActionBarActivity {
             return true;
         }
         if (id == R.id.action_today) {
+            java.util.Calendar today = java.util.Calendar.getInstance();
+            Log.d("today:", calendarView.getCurrentDate().toString());
+            calendarView.setSelectedDate(today);
+            Log.d("today:", calendarView.getCurrentDate().toString());
+            calendarView.setCurrentDate(today);
+            Log.d("today:", calendarView.getCurrentDate().toString());
             return true;
         }
         if (id == R.id.action_sync_with_server) {

@@ -112,6 +112,7 @@ public class SettingActivity extends ActionBarActivity implements AdapterView.On
 
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
+        actionBar.setHomeButtonEnabled(true);
         actionBar.setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.action_bar)));
 
         /**
@@ -302,7 +303,6 @@ public class SettingActivity extends ActionBarActivity implements AdapterView.On
             case REQUEST_GOOGLE_PLAY_SERVICES:
                 if (resultCode == RESULT_OK) {
                     getCalendarList();
-                    //TODO
                 } else {
                     isGooglePlayServicesAvailable();
                 }
@@ -344,6 +344,10 @@ public class SettingActivity extends ActionBarActivity implements AdapterView.On
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if(id == R.id.save_in_setting) {
+            finish();
+            return true;
+        }
+        if(id == android.R.id.home) {
             finish();
             return true;
         }

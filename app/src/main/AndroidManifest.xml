@@ -40,6 +40,7 @@
             android:name=".MainActivity"
             android:configChanges="orientation"
             android:label="@string/title_activity_main"
+            android:logo="@drawable/ic_launcher"
             android:screenOrientation="portrait" >
         </activity>
         <activity
