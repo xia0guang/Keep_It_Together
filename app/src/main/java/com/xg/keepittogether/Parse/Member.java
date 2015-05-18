@@ -35,4 +35,9 @@ public class Member extends ParseObject{
         return getLong("syncTokenLong");
     }
 
+    @Override
+    public String toString(){
+        return "memberName: " + getMemberName() + ", color: " + String.valueOf(getColor()) + ", syncTokenLong: " + String.valueOf(getSyncToken());
+    }
+
 }

@@ -29,31 +29,23 @@ public class MyApplication extends Application {
     public static class DataWrapper{
         public List<List<ParseEvent>> eventList;
         public List<DayViewDecorator> decorators;
-//        public HashMap<Long, Integer> positionMap;
-        public HashMap<Integer, Calendar> reversePositionMap;
-//        public HashMap<String, ParseEvent> eventMap;
-        public Calendar upCal, upThresholdCal, downCal, downThresholdCal;
+        public HashMap<Integer, Calendar> positionCalMap;
+        public Calendar upCal, downCal;
         public boolean upFetch, downFetch, loading;
 
         DataWrapper() {
             eventList = new ArrayList<>();
-//            positionMap = new HashMap<>();
-            reversePositionMap = new HashMap<>();
+            positionCalMap = new HashMap<>();
             decorators = new ArrayList<>();
-//            eventMap = new HashMap<>();
             upCal = Calendar.getInstance();
-            upThresholdCal = Calendar.getInstance();
             downCal = Calendar.getInstance();
-            downThresholdCal = Calendar.getInstance();
             upFetch = true; downFetch = true;
             loading = false;
         }
 
         public void clear() {
             eventList.clear();
-//            positionMap.clear();
-            reversePositionMap.clear();
-//            eventMap.clear();
+            positionCalMap.clear();
         }
     }
 

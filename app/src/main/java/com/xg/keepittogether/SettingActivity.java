@@ -49,11 +49,13 @@ import com.google.api.services.calendar.model.CalendarList;
 import com.google.api.services.calendar.model.CalendarListEntry;
 import com.parse.FindCallback;
 import com.parse.GetCallback;
+import com.parse.Parse;
 import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
 import com.xg.keepittogether.Parse.Member;
+import com.xg.keepittogether.Parse.ParseEvent;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -180,14 +182,18 @@ public class SettingActivity extends ActionBarActivity implements AdapterView.On
         edit.putInt("color", position);
         edit.apply();
 
-        ParseQuery<ParseObject> query = ParseQuery.getQuery("Members");
+        ParseQuery<Member> query = ParseQuery.getQuery(Member.class);
         query.whereEqualTo("memberName", userPref.getString("memberName",null));
-        query.findInBackground(new FindCallback<ParseObject>() {
+        query.findInBackground(new FindCallback<Member>() {
             @Override
-            public void done(List<ParseObject> parseObjects, ParseException e) {
-                ParseObject member = parseObjects.get(0);
-                member.put("color", itemPosition);
-                member.saveEventually();
+            public void done(List<Member> members, ParseException e) {
+                if (e == null) {
+                    Member member = members.get(0);
+                    member.setColor(itemPosition);
+                    member.saveEventually();
+                } else {
+                    Log.d("setting color error:", e.getMessage());
+                }
             }
         });
         colorChanged = true;
@@ -206,17 +212,18 @@ public class SettingActivity extends ActionBarActivity implements AdapterView.On
             public void done(Member member, ParseException e) {
                 if (e == null) {
                     member.setSyncTokenLong(0);
+                        member.saveEventually();
+                        ParseUser.logOut();
+                        userPref.edit().clear().apply();
+                        googlePref.edit().clear().apply();
+                        Intent intent = new Intent(SettingActivity.this, LoginActivity.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
                 } else {
                     Log.d("query member error: ", e.getMessage());
                 }
             }
         });
-        ParseUser.logOut();
-        userPref.edit().clear().apply();
-        googlePref.edit().clear().apply();
-        Intent intent = new Intent(this, LoginActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
     }
 
     public void setCalendar(View view) {
@@ -352,6 +359,46 @@ public class SettingActivity extends ActionBarActivity implements AdapterView.On
             finish();
             return true;
         }
+        /*if(id == R.id.delete) {
+            ParseQuery<ParseEvent> query = ParseQuery.getQuery(ParseEvent.class);
+            query.whereEqualTo("calendarName", "wu890120@gmail.com");
+            query.findInBackground(new FindCallback<ParseEvent>() {
+                @Override
+                public void done(List<ParseEvent> list, ParseException e) {
+                    if (e == null) {
+                        for (ParseEvent parseEvent : list) {
+                            parseEvent.deleteEventually();
+                            parseEvent.unpinInBackground();
+                        }
+                    } else {
+                        Log.d("find error:", e.getMessage());
+                    }
+                }
+            });
+        }
+        if(id == R.id.reset_sync_token) {
+            ParseQuery<Member> query = ParseQuery.getQuery(Member.class);
+            query.whereEqualTo("memberName", userPref.getString("memberName", null));
+            query.getFirstInBackground(new GetCallback<Member>() {
+                @Override
+                public void done(Member member, ParseException e) {
+                    if (e == null) {
+                        Log.d("I am now: ",member.toString());
+                        Log.d("I am in:", "after find");
+                        member.setSyncTokenLong(0);
+                        Log.d("I am in:", "after setting");
+                        try {
+                            member.save();
+                            Log.d("I am in:", "after save");
+                        } catch (ParseException e1) {
+                            Log.d("member save error:", e1.getMessage());
+                        }
+                    } else {
+                        Log.d("query member error: ", e.getMessage());
+                    }
+                }
+            });
+        }*/
         return true;
     }
 

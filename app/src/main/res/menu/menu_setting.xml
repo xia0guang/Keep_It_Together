@@ -7,4 +7,12 @@
         android:id="@+id/save_in_setting"
         android:title="@string/save_in_setting_text"
         app:showAsAction="always"/>
+    <!--<item
+        android:id="@+id/delete"
+        android:title="delete"
+        app:showAsAction="always"/>
+    <item
+        android:id="@+id/reset_sync_token"
+        android:title="reset sync token"
+        app:showAsAction="always"/>-->
 </menu>

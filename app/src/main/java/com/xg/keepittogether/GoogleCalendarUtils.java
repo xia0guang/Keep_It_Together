@@ -159,6 +159,7 @@ public class GoogleCalendarUtils {
                             parseEvent.setMemberName(userPref.getString("memberName", null));
                             parseEvent.setFrom("Google_Calendar");
                             parseEvent.setCalendarName(calendarName);
+                            parseEvent.setConfirmed();
                             parseEvent.setACL(new ParseACL(ParseUser.getCurrentUser()));
 
                         }

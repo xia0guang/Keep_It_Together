@@ -26,10 +26,10 @@
     <string name="client_key">RLwcsKj1Cg9Me9a7fuewNjKQRgbHG8THnvHo4I1J</string>
     <string name="title_activity_main">Home</string>
     <string name="title_activity_sign_up">SignUpActivity</string>
-    <string name="email_ET_hint">your family share email</string>
+    <string name="email_ET_hint">family share email</string>
     <string name="email_ET">Email:</string>
     <string name="member_name_ET_hint">your member name</string>
-    <string name="password_ET_hint">your family share password</string>
+    <string name="password_ET_hint">family share password</string>
     <string name="match_password_TV">Password again:</string>
     <string name="match_password_ET_hint">password again</string>
     <string name="error_blank_member_name">enter a member name</string>

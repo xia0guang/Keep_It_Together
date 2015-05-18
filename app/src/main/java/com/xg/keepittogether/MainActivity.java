@@ -37,20 +37,22 @@ import java.util.List;
 
 
 public class MainActivity extends ActionBarActivity {
-
     private SharedPreferences userPref;
     private SharedPreferences googlePref;
 
     public RecyclerView mRecyclerView;
-    public MaterialCalendarView calendarView;
     public EventAdapter mAdapter;
+    public LinearLayoutManager mLayoutManager;
+    public MaterialCalendarView calendarView;
+    public Calendar currentCal = Calendar.getInstance();
 
     public static final int REQUEST_ADD_OR_CHANGE_NEW_EVENT = 0;
     public static final int REQUEST_SETTING = 1;
+    public static final int ITEM_LEFT_LOAD_MORE = 5;
 
     private MyApplication.DataWrapper dataWrapper;
 
-
+    int i = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,22 +71,16 @@ public class MainActivity extends ActionBarActivity {
         ActionBar actionBar = getSupportActionBar();
         actionBar.setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.action_bar)));
 
-
-
         //RecyclerView initialization
         mRecyclerView = (RecyclerView) findViewById(R.id.recycleView);
-
         mRecyclerView.setItemAnimator(new DefaultItemAnimator());
-
         mRecyclerView.setHasFixedSize(true);
         // use a linear layout manager
-        final LinearLayoutManager mLayoutManager = new LinearLayoutManager(this);
+        mLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLayoutManager);
         //setAdapter
         mAdapter = new EventAdapter(MainActivity.this, dataWrapper.eventList, userPref);
         mRecyclerView.setAdapter(mAdapter);
-
-
 
         //set CalendarView
         calendarView = (MaterialCalendarView) findViewById(R.id.calendarView);
@@ -131,49 +127,36 @@ public class MainActivity extends ActionBarActivity {
             public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
                 super.onScrollStateChanged(recyclerView, newState);
             }
-
-
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-
                 calendarView.setOnDateChangedListener(null);
-                if (!dataWrapper.loading) {
-                    super.onScrolled(recyclerView, dx, dy);
-                    LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
-                    int firstPosition = layoutManager.findFirstVisibleItemPosition();
-                    java.util.Calendar firstCal = dataWrapper.reversePositionMap.get(firstPosition);
+                super.onScrolled(recyclerView, dx, dy);
+                LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                EventAdapter adapter = (EventAdapter) recyclerView.getAdapter();
+                int firstPosition = layoutManager.findFirstVisibleItemPosition();
+                Calendar firstCal = dataWrapper.positionCalMap.get(firstPosition);
+                if (!firstCal.equals(currentCal)) {
+                    currentCal = firstCal;
                     calendarView.setSelectedDate(firstCal);
-                    if (dy > 0 && dataWrapper.downFetch) {
+                    calendarView.setCurrentDate(firstCal);
+                }
+                if (dy > 0 && dataWrapper.downFetch) {
                         int lastPosition = layoutManager.findLastVisibleItemPosition();
-                        java.util.Calendar lastCal = dataWrapper.reversePositionMap.get(lastPosition);
-                        if (lastCal.compareTo(dataWrapper.downThresholdCal) >= 0) {
+                        if(!dataWrapper.loading && adapter.getItemCount() - lastPosition <= ITEM_LEFT_LOAD_MORE) {
+                            dataWrapper.loading = true;
                             new LoadMoreEvent().execute(ParseEventUtils.DOWN);
                         }
                     }
-                    if (dy < 0 && dataWrapper.upFetch) {
-                        if (firstCal.compareTo(dataWrapper.upThresholdCal) <= 0) {
+                    if (dy < 0 && dataWrapper.upFetch ) {
+                        if (!dataWrapper.loading && firstPosition <= ITEM_LEFT_LOAD_MORE) {
+                            dataWrapper.loading = true;
                             new LoadMoreEvent().execute(ParseEventUtils.UP);
                         }
                     }
-                }
                 calendarView.setOnDateChangedListener(mOnDateChangedListener);
-            }
+                }
         });
-
-        ParseEventUtils.firstTimeParseEventFromLocal(this);
-        int listSize = googlePref.getInt("listSize", 0);
-        if (listSize > 0) {
-            if (GoogleCalendarUtils.isGooglePlayServicesAvailable(this)) {
-                syncCalendarEvent(listSize);
-            } else {
-                Toast.makeText(this, "Google Play Services required: " +
-                        "after installing, close and relaunch this app.", Toast.LENGTH_LONG).show();
-            }
-        }else{
-            String memberName = userPref.getString("memberName", null);
-            ParseEventUtils.fetchEventInNewThread(this, memberName);
-        }
-
+        new syncCalendarAndFetch().execute();
         storeColorPref();
     }
 
@@ -185,40 +168,6 @@ public class MainActivity extends ActionBarActivity {
     }
 
 
-    public void syncCalendarEvent(final int listSize) {
-        if (GoogleCalendarUtils.isDeviceOnline(this)) {
-            new AsyncTask<Void, Void, Void>() {
-                @Override
-                protected Void doInBackground(Void... params) {
-                    try {
-                        GoogleCalendarUtils.downloadGoogleCalendar(MainActivity.this);
-
-                    } catch (final GooglePlayServicesAvailabilityIOException availabilityException) {
-                        GoogleCalendarUtils.showGooglePlayServicesAvailabilityErrorDialog(
-                                MainActivity.this, availabilityException.getConnectionStatusCode());
-                    } catch (UserRecoverableAuthIOException userRecoverableException) {
-                        MainActivity.this.startActivityForResult(
-                                userRecoverableException.getIntent(),
-                                SettingActivity.REQUEST_AUTHORIZATION);
-                    } catch (IOException e) {
-                        Log.d("error occurred: ",e.getMessage());
-                    } catch (ParseException pe) {
-                        pe.printStackTrace();
-                    }
-                    return null;
-                }
-
-                @Override
-                protected void onPostExecute(Void aVoid) {
-                    //Fetch ParseEvent from server in order to make consistent between local and server
-                    String memberName = userPref.getString("memberName", null);
-                    ParseEventUtils.fetchEventInSameThread(MainActivity.this, memberName);
-                }
-            }.execute();
-        } else {
-            Toast.makeText(this, "No network connection available.", Toast.LENGTH_SHORT).show();
-        }
-    }
 
     private void storeColorPref() {
         ParseQuery<Member> queryMember = ParseQuery.getQuery(Member.class);
@@ -242,12 +191,11 @@ public class MainActivity extends ActionBarActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if(requestCode == REQUEST_ADD_OR_CHANGE_NEW_EVENT && resultCode==RESULT_OK){
             if(data.hasExtra("changedPosition") ){
-//                mAdapter.notifyItemInserted(data.getIntExtra("changedPosition", 0));
                 mAdapter.notifyDataSetChanged();
-//                Toast.makeText(this, "add/change event completed", Toast.LENGTH_SHORT).show();
             }
         } else if(requestCode == REQUEST_SETTING && resultCode==RESULT_OK) {
             if(data.hasExtra("colorChanged")) {
+                //TODO
             }
             if(data.hasExtra("googleCalendarSettingChanged")) {
                 Toast.makeText(this, "google calendar changed", Toast.LENGTH_SHORT).show();
@@ -265,12 +213,7 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             Intent settingIntent = new Intent(this, SettingActivity.class);
             startActivityForResult(settingIntent, REQUEST_SETTING);
@@ -284,44 +227,94 @@ public class MainActivity extends ActionBarActivity {
         }
         if (id == R.id.action_today) {
             java.util.Calendar today = java.util.Calendar.getInstance();
-            Log.d("today:", calendarView.getCurrentDate().toString());
             calendarView.setSelectedDate(today);
-            Log.d("today:", calendarView.getCurrentDate().toString());
             calendarView.setCurrentDate(today);
-            Log.d("today:", calendarView.getCurrentDate().toString());
             return true;
         }
         if (id == R.id.action_sync_with_server) {
-            int listSize = googlePref.getInt("listSize", 0);
-            if (listSize > 0) {
-                if (GoogleCalendarUtils.isGooglePlayServicesAvailable(this)) {
-                    syncCalendarEvent(listSize);
-                } else {
-                    Toast.makeText(this, "Google Play Services required: " +
-                            "after installing, close and relaunch this app.", Toast.LENGTH_LONG).show();
-                }
-            }else{
-                String memberName = userPref.getString("memberName", null);
-                ParseEventUtils.fetchEventInNewThread(this, memberName);
+            if (GoogleCalendarUtils.isDeviceOnline(this)) {
+                new syncCalendarAndFetch().execute();
+            }else {
+                Toast.makeText(this, "No network connection available.", Toast.LENGTH_SHORT).show();
             }
         }
 
         return super.onOptionsItemSelected(item);
     }
 
-    private class LoadMoreEvent extends AsyncTask<Integer, Void, Void> {
+    private class syncCalendarAndFetch extends AsyncTask<Void, Void, Void> {
+        int position = 0;
+        @Override
+        protected Void doInBackground(Void... params) {
+            try {
+                int listSize = googlePref.getInt("listSize", 0);
+                if (listSize > 0) {
+                    if (GoogleCalendarUtils.isGooglePlayServicesAvailable(MainActivity.this)) {
+                        if (GoogleCalendarUtils.isDeviceOnline(MainActivity.this)) {
+                            GoogleCalendarUtils.downloadGoogleCalendar(MainActivity.this);
+                        } else {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(MainActivity.this, "No network connection available.", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                    } else {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(MainActivity.this, "Google Play Services required: " +
+                                        "after installing, close and relaunch this app.", Toast.LENGTH_LONG).show();
+                            }
+                        });
+                    }
+                }
+                String memberName = userPref.getString("memberName", null);
+                position = ParseEventUtils.fetchEventInSameThread(MainActivity.this, memberName);
+            } catch (final GooglePlayServicesAvailabilityIOException availabilityException) {
+                GoogleCalendarUtils.showGooglePlayServicesAvailabilityErrorDialog(
+                        MainActivity.this, availabilityException.getConnectionStatusCode());
+            } catch (UserRecoverableAuthIOException userRecoverableException) {
+                MainActivity.this.startActivityForResult(
+                        userRecoverableException.getIntent(),
+                        SettingActivity.REQUEST_AUTHORIZATION);
+            } catch (IOException e) {
+                Log.d("error occurred: ",e.getMessage());
+            } catch (ParseException pe) {
+                pe.printStackTrace();
+            }
+            return null;
+        }
 
         @Override
+        protected void onPostExecute(Void aVoid) {
+            mAdapter.notifyDataSetChanged();
+            EventIndicateDecorator.buildDecorators(MainActivity.this);
+            mLayoutManager.scrollToPositionWithOffset(position, 0);
+            dataWrapper.loading = false;
+        }
+    }
+
+    private class LoadMoreEvent extends AsyncTask<Integer, Void, Void> {
+
+        int dir;
+        @Override
         protected Void doInBackground(Integer... params) {
-            int dir = params[0];
+            dir = params[0];
             ParseEventUtils.updateParseEventFromLocal(MainActivity.this, dir);
             return null;
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            dataWrapper.loading = false;
             mAdapter.notifyDataSetChanged();
+            EventIndicateDecorator.buildDecorators(MainActivity.this);
+            if(ParseEventUtils.UP == dir) {
+                mLayoutManager.scrollToPositionWithOffset(ParseEventUtils.LOAD_ITEM_QUANTITY + ITEM_LEFT_LOAD_MORE, 0);
+            }
+            dataWrapper.loading = false;
+            Log.d("List size: ", dataWrapper.eventList.size() + "");
         }
     }
 

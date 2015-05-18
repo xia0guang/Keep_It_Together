@@ -104,5 +104,10 @@ public class ParseEvent extends ParseObject{
         return getBoolean("inList");
     }
 
+    @Override
+    public String toString() {
+        return getTitle() + ", " + String.format("%tD", getStartCal()) + ", " + String.valueOf(getStartCal().getTimeInMillis());
+    }
+
     //TODO all day event
 }

@@ -1,20 +1,14 @@
 package com.xg.keepittogether.Parse;
 
 import android.app.Activity;
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.google.api.services.calendar.model.Event;
 import com.parse.FindCallback;
 import com.parse.ParseException;
 import com.parse.ParseQuery;
-import com.prolificinteractive.materialcalendarview.CalendarDay;
-import com.prolificinteractive.materialcalendarview.DayViewDecorator;
-import com.xg.keepittogether.EventColor;
 import com.xg.keepittogether.EventIndicateDecorator;
-import com.xg.keepittogether.MainActivity;
+import com.xg.keepittogether.GoogleCalendarUtils;
 import com.xg.keepittogether.MyApplication;
 
 import java.util.ArrayList;
@@ -31,35 +25,42 @@ import java.util.List;
 public class ParseEventUtils {
     public static final int UP = 0;
     public static final int DOWN = 1;
+    public static final int LOAD_ITEM_QUANTITY = 10;
 
-    public static void firstTimeParseEventFromLocal(Activity activity) {
+    public static int firstTimeParseEventFromLocal(Activity activity) {
+        java.util.Calendar todayCal = java.util.Calendar.getInstance();
         java.util.Calendar startCal = java.util.Calendar.getInstance();
-        startCal.add(Calendar.DAY_OF_MONTH, -1);
+        startCal.add(Calendar.MONTH, -6);
         java.util.Calendar endCal = java.util.Calendar.getInstance();
         endCal.add(java.util.Calendar.MONTH, +6);
 
         MyApplication.DataWrapper dataWrapper = ((MyApplication)activity.getApplication()).dataWrapper;
-        SharedPreferences googlePref = activity.getSharedPreferences("Google_Calendar_List", Context.MODE_PRIVATE);
-
-
         dataWrapper.clear();
 
-        ParseQuery<ParseEvent> query = ParseQuery.getQuery(ParseEvent.class);
-        query.fromLocalDatastore();
-        Date startDate = startCal.getTime();
-        query.whereGreaterThanOrEqualTo("startDate", startDate);
-        query.whereLessThanOrEqualTo("startDate", endCal.getTime());
-        query.whereNotEqualTo("inList", false);
-        query.orderByAscending("startDate");
+        int returnPosition = 0;
+
+        ParseQuery<ParseEvent> query1 = ParseQuery.getQuery(ParseEvent.class);
+        query1.fromLocalDatastore();
+        query1.whereNotEqualTo("inList", false);
+        query1.whereGreaterThanOrEqualTo("startDate", startCal.getTime());
+        query1.whereLessThanOrEqualTo("startDate", todayCal.getTime());
+        query1.orderByAscending("startDate");
+
+        ParseQuery<ParseEvent> query2 = ParseQuery.getQuery(ParseEvent.class);
+        query2.fromLocalDatastore();
+        query2.whereNotEqualTo("inList", false);
+        query2.whereGreaterThan("startDate", todayCal.getTime());
+        query2.whereLessThanOrEqualTo("startDate", endCal.getTime());
+        query2.orderByAscending("startDate");
 
         try {
-            List<ParseEvent> list = query.find();
+            List<ParseEvent> list = query1.find();
+            returnPosition = list.size();
+            list.addAll(query2.find());
             //put query result into event list
-            if(list.size() == 0) return;
+            if(list.size() == 0) return 0;
             for (int i = 0; i < list.size(); i++) {
                 ParseEvent curObj = list.get(i);
-
-
                 if (dataWrapper.eventList.size() >0 && hashCalDay(dataWrapper.eventList.get(dataWrapper.eventList.size()-1).get(0).getStartCal()) == hashCalDay(curObj.getStartCal())) {
                     List<ParseEvent> l = dataWrapper.eventList.get(dataWrapper.eventList.size() - 1);
                     l.add(curObj);
@@ -68,34 +69,23 @@ public class ParseEventUtils {
                 }
             }
 
-            //create positionMap and reversePositionMap
+            //create positionMap and positionCalMap
             for (int i = 0; i < dataWrapper.eventList.size(); i++) {
                 java.util.Calendar cal = dataWrapper.eventList.get(i).get(0).getStartCal();
-                long day = hashCalDay(cal);
-//                dataWrapper.positionMap.put(day, i);
-                dataWrapper.reversePositionMap.put(i, cal);
+                dataWrapper.positionCalMap.put(i, cal);
             }
-
-            ((MainActivity)activity).mAdapter.notifyDataSetChanged();
 
             //initialize fetch status;
             dataWrapper.upCal.setTimeInMillis(dataWrapper.eventList.get(0).get(0).getStartCal().getTimeInMillis());
-            int fetchPosition = dataWrapper.eventList.size() >= 20? 4:0;
-            dataWrapper.upThresholdCal.setTimeInMillis(dataWrapper.eventList.get(fetchPosition).get(0).getStartCal().getTimeInMillis());
-
             List<ParseEvent> lastList = dataWrapper.eventList.get(dataWrapper.eventList.size()-1);
-            dataWrapper.downCal.setTimeInMillis(lastList.get(lastList.size()-1).getStartCal().getTimeInMillis());
-            fetchPosition = dataWrapper.eventList.size() >= 20? dataWrapper.eventList.size()-5:dataWrapper.eventList.size()-1;
-            List<ParseEvent> thresholdList = dataWrapper.eventList.get(fetchPosition);
-            dataWrapper.downThresholdCal.setTimeInMillis(thresholdList.get(thresholdList.size()-1).getStartCal().getTimeInMillis());
+            dataWrapper.downCal.setTimeInMillis(lastList.get(lastList.size() - 1).getStartCal().getTimeInMillis());
             dataWrapper.upFetch = true;
             dataWrapper.downFetch = true;
-
-            buildDecorators(activity);
 
         } catch (ParseException e) {
             e.printStackTrace();
         }
+        return returnPosition;
     }
 
     public static void updateParseEventFromLocal(final Activity activity, int dir) {
@@ -104,36 +94,43 @@ public class ParseEventUtils {
 
         ParseQuery<ParseEvent> query = ParseQuery.getQuery(ParseEvent.class);
         query.fromLocalDatastore();
-        query.orderByAscending("startDate");
         if(dir == UP) {
             query.whereLessThan("startDate", dataWrapper.upCal.getTime());
+            query.orderByDescending("startDate");
         } else if(dir == DOWN) {
             query.whereGreaterThan("startDate", dataWrapper.downCal.getTime());
+            query.orderByAscending("startDate");
         }
         query.whereEqualTo("inList", true);
-        query.setLimit(50);
+        query.setLimit(LOAD_ITEM_QUANTITY);
         try {
             List<ParseEvent> list = query.find();
+            if(dir == UP) {
+                Collections.reverse(list);
+            }
             //put query result into event list
             List<List<ParseEvent>> newEventList = new ArrayList<>();
             if(list.size() == 0) {
+                String appStr = "";
+                if(dir == UP) {
+                    dataWrapper.upFetch = false;
+                    appStr = "before";
+                } else if(dir == DOWN) {
+                    dataWrapper.downFetch = false;
+                    appStr = "later";
+                }
+                final String append = appStr;
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(activity, "No more event...", Toast.LENGTH_LONG).show();
+                        Toast.makeText(activity, "No more event " + append+ " ...", Toast.LENGTH_LONG).show();
                     }
                 });
-                if(dir == UP) {
-                    dataWrapper.upFetch = false;
-                } else if(dir == DOWN) {
-                    dataWrapper.downFetch = false;
-                }
                 return;
             }
-            // process result list events;
+            // handle result list events;
             for (int i = 0; i < list.size(); i++) {
                 ParseEvent curObj = list.get(i);
-
                 if (newEventList.size() >0 && hashCalDay(newEventList.get(newEventList.size()-1).get(0).getStartCal()) == hashCalDay(curObj.getStartCal())) {
                     List<ParseEvent> l = newEventList.get(newEventList.size() - 1);
                     l.add(curObj);
@@ -142,36 +139,23 @@ public class ParseEventUtils {
                 }
             }
 
-            dataWrapper.eventList.addAll(newEventList);
-            Collections.sort(dataWrapper.eventList, new Comparator<List<ParseEvent>>() {
-                @Override
-                public int compare(List<ParseEvent> lhs, List<ParseEvent> rhs) {
-                    return lhs.get(0).getStartCal().compareTo(rhs.get(0).getStartCal());
-                }
-            });
+            if(dir == UP) dataWrapper.eventList.addAll(0,newEventList);
+            if(dir == DOWN) dataWrapper.eventList.addAll(newEventList);
 
             //TODO duplicate date may split to two rows, need to be solved
-            //create positionMap and reversePositionMap
+            //create positionCalMap
             for (int i = 0; i < dataWrapper.eventList.size(); i++) {
                 java.util.Calendar cal = dataWrapper.eventList.get(i).get(0).getStartCal();
-                long day = hashCalDay(cal);
-//                dataWrapper.positionMap.put(day, i);
-                dataWrapper.reversePositionMap.put(i, cal);
+                dataWrapper.positionCalMap.put(i, cal);
             }
 
             if(dir == UP) {
                 dataWrapper.upCal.setTimeInMillis(dataWrapper.eventList.get(0).get(0).getStartCal().getTimeInMillis());
-                int fetchPosition = dataWrapper.eventList.size() >= 20? 4:0;
-                dataWrapper.upThresholdCal.setTimeInMillis(dataWrapper.eventList.get(fetchPosition).get(0).getStartCal().getTimeInMillis());
             } else if(dir == DOWN) {
                 List<ParseEvent> lastList = dataWrapper.eventList.get(dataWrapper.eventList.size()-1);
                 dataWrapper.downCal.setTimeInMillis(lastList.get(lastList.size()-1).getStartCal().getTimeInMillis());
-                int fetchPosition = dataWrapper.eventList.size() >= 20? dataWrapper.eventList.size()-5:dataWrapper.eventList.size()-1;
-                List<ParseEvent> thresholdList = dataWrapper.eventList.get(fetchPosition);
-                dataWrapper.downThresholdCal.setTimeInMillis(thresholdList.get(thresholdList.size()-1).getStartCal().getTimeInMillis());
             }
 
-            buildDecorators(activity);
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -208,7 +192,7 @@ public class ParseEventUtils {
     public static void fetchParseEventFromServer(long syncToken) {
         ParseQuery<ParseEvent> query = ParseQuery.getQuery(ParseEvent.class);
         Date syncDate = new Date(syncToken);
-        query.whereGreaterThanOrEqualTo("updateAt", syncDate);
+        query.whereGreaterThanOrEqualTo("updatedAt", syncDate);
         try {
             List<ParseEvent> events = query.find();
             for (ParseEvent parseEvent : events) {
@@ -219,80 +203,41 @@ public class ParseEventUtils {
         }
     }
 
-    //fetch in new thread
-    public static void fetchEventInNewThread(final Activity activity, String memberName) {
-        ParseQuery<Member> query = ParseQuery.getQuery(Member.class);
-        query.whereEqualTo("memberName", memberName);
-        query.findInBackground(new FindCallback<Member>() {
-            @Override
-            public void done(List<Member> members, ParseException e) {
-                if (e == null) {
-                    Member member = members.get(0);
-                    long syncToken = member.getSyncToken();
-                    ParseEventUtils.fetchParseEventFromServer(syncToken);
-                    java.util.Calendar calendar = java.util.Calendar.getInstance();
-                    member.setSyncToken(calendar);
-                    member.saveEventually();
-
-                    //from local
-                    firstTimeParseEventFromLocal(activity);
-//                    Toast.makeText(activity, "query done", Toast.LENGTH_LONG).show();
-                } else {
-                    Log.d("fetch error: ", e.getMessage());
-                }
-            }
-        });
-    }
-
     //fetch in same thread
-    public static void fetchEventInSameThread(Activity activity, String memberName) {
+    public static int fetchEventInSameThread(final Activity activity, String memberName) {
         ParseQuery<Member> query = ParseQuery.getQuery(Member.class);
         query.whereEqualTo("memberName", memberName);
+        int position = 0;
         try {
-            List<Member> members = query.find();
-            Member member = members.get(0);
             //from server -> same thread
-            long syncToken = member.getSyncToken();
-            ParseEventUtils.fetchParseEventFromServer(syncToken);
-            java.util.Calendar calendar = java.util.Calendar.getInstance();
-            member.setSyncToken(calendar);
-            member.saveEventually();
-
-            //from local -> new thread
-            firstTimeParseEventFromLocal(activity);
-
+            if (GoogleCalendarUtils.isDeviceOnline(activity)) {
+                List<Member> members = query.find();
+                Member member = members.get(0);
+                long syncToken = member.getSyncToken();
+                ParseEventUtils.fetchParseEventFromServer(syncToken);
+                java.util.Calendar calendar = java.util.Calendar.getInstance();
+                member.setSyncToken(calendar);
+                member.saveEventually();
+            } else {
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(activity, "No network connection available.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
         } catch (ParseException e) {
             e.printStackTrace();
+        } finally {
+            position = firstTimeParseEventFromLocal(activity);
         }
+        return position;
     }
 
     public static long hashCalDay(Calendar cal) {
         return (long) ((cal.get(Calendar.YEAR) - 1970) * 366 + cal.get(Calendar.MONTH) * 31 + cal.get(Calendar.DAY_OF_MONTH));
     }
 
-    public static void buildDecorators(final Activity activity) {
-        final MyApplication.DataWrapper dataWrapper = ((MyApplication)activity.getApplication()).dataWrapper;
-        SharedPreferences userPref = activity.getSharedPreferences("User_Preferences", Context.MODE_PRIVATE);
-        dataWrapper.decorators.clear();
-        for(int i=0; i<dataWrapper.eventList.size(); i++) {
-            List<ParseEvent> list = dataWrapper.eventList.get(i);
-            Calendar cal = list.get(0).getStartCal();
-            CalendarDay day = new CalendarDay(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
-            EventIndicateDecorator decorator = new EventIndicateDecorator("●", day);
-            for (int j = 0; j <list.size(); j++) {
-                ParseEvent event = list.get(j);
-                int color = EventColor.getColor(userPref.getInt("color." + event.getMemberName(), 1));
-                decorator.addColor(color);
-            }
-            dataWrapper.decorators.add(decorator);
-        }
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                ((MainActivity)activity).calendarView.addDecorators(dataWrapper.decorators);
-                ((MainActivity)activity).calendarView.invalidateDecorators();
-            }
-        });
-    }
+
 
 }
