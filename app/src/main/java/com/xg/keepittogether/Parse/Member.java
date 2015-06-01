@@ -1,7 +1,9 @@
 package com.xg.keepittogether.Parse;
 
 import com.parse.ParseClassName;
+import com.parse.ParseException;
 import com.parse.ParseObject;
+import com.parse.ParseQuery;
 
 import java.util.Calendar;
 
@@ -35,9 +37,15 @@ public class Member extends ParseObject{
         return getLong("syncTokenLong");
     }
 
+    public void setPin(String pin) {
+        put("pin", pin);
+    }
+    public String getPin() {
+        return getString("pin");
+    }
+
     @Override
     public String toString(){
         return "memberName: " + getMemberName() + ", color: " + String.valueOf(getColor()) + ", syncTokenLong: " + String.valueOf(getSyncToken());
     }
-
 }

@@ -1,9 +1,111 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:layout_height="match_parent" tools:context="com.xg.keepittogether.LoginFragment">
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    tools:context="com.xg.keepittogether.LoginFragment"
+    android:paddingLeft="@dimen/sign_in_up_lr_padding"
+    android:paddingRight="@dimen/sign_in_up_lr_padding">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView android:layout_width="match_parent" android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
 
-</FrameLayout>
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="@dimen/sign_in_up_ud_padding"
+        android:paddingBottom="@dimen/sign_in_up_ud_padding"
+        android:gravity="center">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/imageView"
+            android:src="@drawable/ic_email_outline_grey600_36dp"/>
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textEmailAddress"
+            android:ems="10"
+            android:id="@+id/loginEmailET"
+            android:hint="@string/email_ET_hint"
+            android:textColorHint="@color/edit_text_hint_grey"
+            android:textColor="@color/edit_text_white_color"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="@dimen/sign_in_up_ud_padding"
+        android:paddingBottom="@dimen/sign_in_up_ud_padding"
+        android:gravity="center">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_lock_outline_grey600_36dp"/>
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword"
+            android:id="@+id/loginPasswordET"
+            android:hint="@string/password_ET_hint"
+            android:textColorHint="@color/edit_text_hint_grey"
+            android:textColor="@color/edit_text_white_color"
+            />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="@dimen/sign_in_up_ud_padding"
+        android:paddingBottom="@dimen/sign_in_up_ud_padding">
+
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/abc_action_button_min_height_material"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="@string/sign_in_button"
+            android:id="@+id/signInBTInFragment"
+            android:gravity="center"
+            android:background="@color/text_button"
+            android:textColor="@color/edit_text_white_color"
+            android:clickable="true"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="@dimen/sign_in_up_ud_padding"
+        android:paddingBottom="@dimen/sign_in_up_ud_padding"
+        android:gravity="center">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:text="@string/sign_up_button_hint_part1"
+                android:textColor="@color/sign_up_hint_part1"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:text="@string/sign_up_button_hint_part2"
+                android:id="@+id/signUpBTInFragment"
+                android:textColor="@color/edit_text_white_color"
+                android:clickable="true"
+                android:onClick="startSignUp"/>
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

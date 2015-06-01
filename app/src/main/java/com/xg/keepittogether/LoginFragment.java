@@ -1,64 +1,51 @@
 package com.xg.keepittogether;
 
 import android.app.Activity;
-import android.net.Uri;
 import android.os.Bundle;
 import android.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import org.w3c.dom.Text;
 
-/**
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link LoginFragment.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link LoginFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
-public class LoginFragment extends Fragment {
+public class LoginFragment extends Fragment implements View.OnClickListener{
 
-    private OnFragmentInteractionListener mListener;
+    private OnButtonClickedListener mListener;
 
-    public static LoginFragment newInstance(String param1, String param2) {
+    public static LoginFragment newInstance() {
         LoginFragment fragment = new LoginFragment();
         return fragment;
     }
 
     public LoginFragment() {
-        // Required empty public constructor
-    }
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-        }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_login, container, false);
-    }
 
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
+        View view = inflater.inflate(R.layout.fragment_login, container, false);
+        TextView signInButton = (TextView)view.findViewById(R.id.signInBTInFragment);
+        signInButton.setOnClickListener(this);
+        TextView signUpButton = (TextView)view.findViewById(R.id.signUpBTInFragment);
+        signUpButton.setOnClickListener(this);
+        return view;
     }
 
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
         try {
-            mListener = (OnFragmentInteractionListener) activity;
+            mListener = (OnButtonClickedListener) activity;
         } catch (ClassCastException e) {
             throw new ClassCastException(activity.toString()
-                    + " must implement OnFragmentInteractionListener");
+                    + " must implement OnButtonClickedListener");
         }
     }
 
@@ -68,19 +55,51 @@ public class LoginFragment extends Fragment {
         mListener = null;
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p/>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
-    public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        public void onFragmentInteraction(Uri uri);
+    @Override
+    public void onClick(View v) {
+        int id = v.getId();
+        if(id == R.id.signInBTInFragment) {
+            EditText emailView = (EditText) getActivity().findViewById(R.id.loginEmailET);
+            EditText passwordView = (EditText)getActivity().findViewById(R.id.loginPasswordET);
+            //Validate the input
+            boolean validationError = false;
+            StringBuilder validationErrorMessage = new StringBuilder(getResources().getString(R.string.error_intro));
+            if (isEmpty(emailView)) {
+                validationError = true;
+                validationErrorMessage.append(getResources().getString(R.string.error_blank_email));
+            }
+            if (isEmpty(passwordView)) {
+                if (validationError) {
+                    validationErrorMessage.append(getResources().getString(R.string.error_join));
+                }
+                validationError = true;
+                validationErrorMessage.append(getResources().getString(R.string.error_blank_password));
+            }
+            validationErrorMessage.append(getResources().getString(R.string.error_end));
+
+            // If there is a validation error, display the error
+            if (validationError) {
+                Toast.makeText(getActivity(), validationErrorMessage.toString(), Toast.LENGTH_LONG)
+                        .show();
+                return;
+            }
+            mListener.signIn(emailView.getText().toString(), passwordView.getText().toString());
+        }
+        if(id == R.id.signUpBTInFragment) {
+            mListener.startSignUp();
+        }
     }
 
+    public interface OnButtonClickedListener {
+        // TODO: Update argument type and name
+        public void signIn(String email, String password);
+        public void startSignUp();
+    }
+
+    private boolean isEmpty(EditText etText) {
+        if (etText.getText().toString().trim().length() > 0) {
+            return false;
+        }
+        return true;
+    }
 }

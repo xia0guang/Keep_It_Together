@@ -1,73 +1,80 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:layout_height="match_parent"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
     tools:context="com.xg.keepittogether.SelectMemberNameFragment"
-    android:background="#ffdaf5ff">
+    android:paddingLeft="@dimen/sign_in_up_lr_padding"
+    android:paddingRight="@dimen/sign_in_up_lr_padding">
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="@string/select_member_name_TV"
+        android:textColor="@color/login_page_app_name_silver"/>
+    <ListView
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/member_list_4_times_row"
+        android:id="@+id/memberNameListView"/>
 
     <LinearLayout
-        android:orientation="vertical"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent">
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:paddingTop="@dimen/sign_in_up_ud_padding">
 
-        <LinearLayout
-            android:orientation="horizontal"
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_account_outline_grey600_36dp"/>
+
+        <EditText
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="30dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceSmall"
-                android:text="@string/select_member_name_TV"
-                android:id="@+id/textView10"
-                android:layout_weight="2"
-                android:gravity="right" />
-
-            <Spinner
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/memberNameSpinner"
-                android:layout_weight="1" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:paddingTop="30dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceSmall"
-                android:text="@string/create_member_name_TV"
-                android:id="@+id/textView11"
-                android:layout_weight="2"
-                android:gravity="right" />
-
-            <EditText
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/createMemberNameET"
-                android:layout_weight="1" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal|bottom"
-            android:gravity="center_horizontal"
-            android:paddingTop="30dp">
-
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/save_member_name_BT"
-                android:id="@+id/saveMemberNameBT" />
-        </LinearLayout>
+            android:id="@+id/createMemberNameET"
+            android:hint="@string/create_member_name_TV"
+            android:textColorHint="@color/edit_text_hint_grey"
+            android:textColor="@color/edit_text_white_color"/>
     </LinearLayout>
-</FrameLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:paddingTop="@dimen/sign_in_up_ud_padding">
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_account_key_grey600_36dp"/>
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/createMemberPin"
+            android:inputType="numberPassword"
+            android:hint="@string/create_member_pin_edit_text"
+            android:textColorHint="@color/edit_text_hint_grey"
+            android:textColor="@color/edit_text_white_color"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|bottom"
+        android:gravity="center_horizontal"
+        android:paddingTop="@dimen/sign_in_up_ud_padding">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/save_member_name_BT"
+            android:id="@+id/createMemberNameButton" />
+    </LinearLayout>
+
+</LinearLayout>

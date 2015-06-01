@@ -1,1 +1,1 @@
-include ':app', ':floatingActionButtonLibrary', ':materialCalendarVeiwLibrary', ':textDrawableLibrary'
+include ':app', ':materialCalendarVeiwLibrary', ':textDrawableLibrary'

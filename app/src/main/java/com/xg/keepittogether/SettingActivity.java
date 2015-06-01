@@ -115,7 +115,6 @@ public class SettingActivity extends ActionBarActivity implements AdapterView.On
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
         actionBar.setHomeButtonEnabled(true);
-        actionBar.setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.action_bar)));
 
         /**
          * Google Calendar API inialization

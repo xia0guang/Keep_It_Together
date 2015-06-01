@@ -2,10 +2,8 @@ package com.xg.keepittogether;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.drawable.ColorDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
@@ -20,6 +18,7 @@ import android.widget.Toast;
 
 import com.google.api.client.googleapis.extensions.android.gms.auth.GooglePlayServicesAvailabilityIOException;
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
+import com.melnykov.fab.FloatingActionButton;
 import com.parse.FindCallback;
 import com.parse.ParseException;
 import com.parse.ParseInstallation;
@@ -65,11 +64,11 @@ public class MainActivity extends ActionBarActivity {
         //handle push register
         ParseInstallation parseInstallation = ParseInstallation.getCurrentInstallation();
         parseInstallation.put("user", ParseUser.getCurrentUser());
-        parseInstallation.put("memberName", getSharedPreferences("User_Preferences", MODE_PRIVATE).getString("memberName", null));
+        parseInstallation.put("memberName", userPref.getString("memberName", null));
         parseInstallation.saveInBackground();
 
-        ActionBar actionBar = getSupportActionBar();
-        actionBar.setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.action_bar)));
+//        ActionBar actionBar = getSupportActionBar();
+//        actionBar.setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.action_bar)));
 
         //RecyclerView initialization
         mRecyclerView = (RecyclerView) findViewById(R.id.recycleView);
@@ -81,6 +80,16 @@ public class MainActivity extends ActionBarActivity {
         //setAdapter
         mAdapter = new EventAdapter(MainActivity.this, dataWrapper.eventList, userPref);
         mRecyclerView.setAdapter(mAdapter);
+
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.attachToRecyclerView(mRecyclerView);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent addEventIntent = new Intent(MainActivity.this, AddEventActivity.class);
+                startActivityForResult(addEventIntent, REQUEST_ADD_OR_CHANGE_NEW_EVENT);
+            }
+        });
 
         //set CalendarView
         calendarView = (MaterialCalendarView) findViewById(R.id.calendarView);
@@ -156,6 +165,7 @@ public class MainActivity extends ActionBarActivity {
                 calendarView.setOnDateChangedListener(mOnDateChangedListener);
                 }
         });
+        ParseEventUtils.firstTimeParseEventFromLocal(this);
         new syncCalendarAndFetch().execute();
         storeColorPref();
     }
@@ -317,5 +327,4 @@ public class MainActivity extends ActionBarActivity {
             Log.d("List size: ", dataWrapper.eventList.size() + "");
         }
     }
-
 }

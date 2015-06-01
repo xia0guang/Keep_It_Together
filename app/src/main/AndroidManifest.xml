@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.xg.keepittogether" >
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.xg.keepittogether">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -23,14 +24,13 @@
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/CustomActionBarTheme">
 
         <activity
             android:name=".DispatchActivity"
-            android:label="@string/title_activity_dispatch" >
+            android:label="@string/title_activity_dispatch">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
@@ -41,7 +41,7 @@
             android:configChanges="orientation"
             android:label="@string/title_activity_main"
             android:logo="@drawable/ic_launcher"
-            android:screenOrientation="portrait" >
+            android:screenOrientation="portrait">
         </activity>
         <activity
             android:name=".SettingActivity"
@@ -61,13 +61,15 @@
             android:name=".LoginActivity"
             android:configChanges="orientation"
             android:label="@string/title_activity_login"
-            android:screenOrientation="portrait" >
+            android:screenOrientation="portrait"
+            android:theme="@style/LoginActivityTheme">
         </activity>
         <activity
             android:name=".SignUpActivity"
             android:configChanges="orientation"
             android:label="@string/title_activity_sign_up"
-            android:screenOrientation="portrait" >
+            android:screenOrientation="portrait"
+            android:theme="@style/LoginActivityTheme">
         </activity>
 
         <receiver android:name=".AlertBroadcastReceiver" />

@@ -8,14 +8,19 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.google.android.gms.common.api.Api;
 import com.parse.ParseACL;
 import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseUser;
 import com.parse.SignUpCallback;
+import com.xg.keepittogether.Parse.Member;
+
+import java.lang.annotation.Target;
 
 
 public class SignUpActivity extends Activity {
@@ -24,6 +29,8 @@ public class SignUpActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sign_up);
+
+
     }
 
     public void signUp(View view) {
@@ -61,6 +68,15 @@ public class SignUpActivity extends Activity {
             validationErrorMessage.append(getResources().getString(
                     R.string.error_mismatched_passwords));
         }
+        if(passwordView.getText().toString().length() < 6) {
+            if (validationError) {
+                validationErrorMessage.append(getResources().getString(R.string.error_join));
+            }
+            validationError = true;
+            validationErrorMessage.append(getResources().getString(
+                    R.string.error_password_short));
+        }
+
         validationErrorMessage.append(getResources().getString(R.string.error_end));
 
         // If there is a validation error, display the error
@@ -84,7 +100,6 @@ public class SignUpActivity extends Activity {
 
         // Call the Parse signup method
         user.signUpInBackground(new SignUpCallback() {
-
             @Override
             public void done(ParseException e) {
                 dlg.dismiss();
@@ -94,19 +109,19 @@ public class SignUpActivity extends Activity {
                 } else {
 
                     //Store member name in Members Table
-                    ParseObject member = new ParseObject("Members");
+                    Member member = new Member();
                     EditText memberNameView = (EditText)findViewById(R.id.signUpMemberNameET);
-                    member.put("memberName", memberNameView.getText().toString());
-                    member.put("color", EventColor.BLUE);
+                    member.setMemberName(memberNameView.getText().toString());
+                    member.setColor(EventColor.BLUE);
                     member.setACL(new ParseACL(ParseUser.getCurrentUser()));
-                    member.saveInBackground();
+                    member.saveEventually();
 
                     //Set member name in preferences file
                     SharedPreferences userPref = getSharedPreferences("User_Preferences", Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = userPref.edit();
                     editor.putString("memberName", memberNameView.getText().toString());
                     editor.putInt("color", EventColor.BLUE);
-                    editor.commit();
+                    editor.apply();
 
                     // Start an intent for the dispatch activity
                     Intent intent = new Intent(SignUpActivity.this, MainActivity.class);
@@ -121,17 +136,15 @@ public class SignUpActivity extends Activity {
     private boolean isEmpty(EditText etText) {
         if (etText.getText().toString().trim().length() > 0) {
             return false;
-        } else {
-            return true;
         }
+        return true;
     }
 
     private boolean isMatching(EditText etText1, EditText etText2) {
         if (etText1.getText().toString().equals(etText2.getText().toString())) {
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
 }

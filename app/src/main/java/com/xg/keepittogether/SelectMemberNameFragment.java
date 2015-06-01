@@ -1,9 +1,10 @@
 package com.xg.keepittogether;
 
 
-import android.app.DialogFragment;
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -11,115 +12,148 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Spinner;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import com.amulyakhare.textdrawable.TextDrawable;
 import com.parse.FindCallback;
-import com.parse.GetCallback;
 import com.parse.ParseACL;
 import com.parse.ParseException;
-import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
 import com.xg.keepittogether.Parse.Member;
 
-import java.util.ArrayList;
 import java.util.List;
 
 
-/**
- * A simple {@link Fragment} subclass.
- */
-public class SelectMemberNameFragment extends DialogFragment {
+public class SelectMemberNameFragment extends Fragment {
 
 
     public SelectMemberNameFragment() {
         // Required empty public constructor
     }
 
-    Button saveButton;
+    Button createButton;
+    ListView mListView;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-
         View inflatedView = inflater.inflate(R.layout.fragment_select_member_name, container, false);
-        saveButton = (Button)inflatedView.findViewById(R.id.saveMemberNameBT);
+        mListView = (ListView)inflatedView.findViewById(R.id.memberNameListView);
 
-        return inflatedView;
-    }
-
-    @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        ParseQuery<ParseObject> query = ParseQuery.getQuery("Members");
-        query.findInBackground(new FindCallback<ParseObject>() {
-            public void done(List<ParseObject> list, ParseException e) {
+        ParseQuery<Member> query = ParseQuery.getQuery(Member.class);
+        query.findInBackground(new FindCallback<Member>() {
+            public void done(final List<Member> members, ParseException e) {
                 if (e == null) {
-                    List<String> memberNameList = new ArrayList<>();
-                    for(ParseObject po : list) {
-                        memberNameList.add(po.getString("memberName"));
-                    }
-                    ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(getActivity(),android.R.layout.simple_spinner_dropdown_item, memberNameList);
-                    Spinner spinner = (Spinner) getActivity().findViewById(R.id.memberNameSpinner);
-                    spinner.setAdapter(arrayAdapter);
+                    ArrayAdapter<Member> arrayAdapter = new ArrayAdapter<Member>(getActivity(),R.layout.member_list_row) {
+                        @Override
+                        public int getCount() {
+                            return members.size();
+                        }
+
+                        @Override
+                        public Member getItem(int position) {
+                            return members.get(position);
+                        }
+
+                        @Override
+                        public int getPosition(Member item) {
+                            return members.indexOf(item);
+                        }
+
+                        @Override
+                        public View getView(int position, View convertView, ViewGroup parent) {
+                            LayoutInflater mInflater = getActivity().getLayoutInflater();
+                            View row = mInflater.inflate(R.layout.member_list_row, parent, false);
+                            TextView memberName = (TextView) row.findViewById(R.id.memberNameInMemberList);
+                            memberName.setText(getItem(position).getMemberName());
+                            ImageView icon = (ImageView) row.findViewById(R.id.memberIconInMemberList);
+                            String[] names = getItem(position).getMemberName().split(" +");
+                            String nameInit = "";
+                            for (int j = 0; j < names.length; j++) {
+                                nameInit += names[j].substring(0,1).toUpperCase();
+                            }
+                            int color = EventColor.getColor(getItem(position).getColor());
+                            TextDrawable drawable = TextDrawable.builder().buildRound(nameInit, color);
+                            icon.setImageDrawable(drawable);
+                            return row;
+                        }
+                    };
+                    mListView.setAdapter(arrayAdapter);
+                    mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
+                            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                            final View pinMatchView = getActivity().getLayoutInflater().inflate(R.layout.pin_match_dialog, null);
+                            builder.setView(pinMatchView)
+                            .setTitle("verify your PIN number:")
+                                    .setPositiveButton("Enter", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            EditText pinText = (EditText) pinMatchView.findViewById(R.id.inputPinEdittext);
+                                            String pin = pinText.getText().toString();
+                                            Member member = members.get(position);
+                                            if (pin != null && pin.equals(member.getPin())) {
+                                                storePref(member.getMemberName(), member.getColor());
+                                                startMainActivity();
+                                            } else {
+                                                getActivity().runOnUiThread(new Runnable() {
+                                                    @Override
+                                                    public void run() {
+                                                        Toast.makeText(getActivity(), "PIN number is wrong, please try again.", Toast.LENGTH_LONG).show();
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    });
+                            builder.show();
+                        }
+                    });
                 } else {
                     Log.d("memberName", "Error: " + e.getMessage());
                 }
             }
         });
-
-
-        saveButton.setOnClickListener(new View.OnClickListener() {
+        createButton = (Button)inflatedView.findViewById(R.id.createMemberNameButton);
+        createButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Member member = new Member();
+                EditText memberNameView = (EditText) getActivity().findViewById(R.id.createMemberNameET);
+                EditText pinView = (EditText)getActivity().findViewById(R.id.createMemberPin);
+                member.setMemberName(memberNameView.getText().toString());
+                member.setColor(EventColor.BLUE);
+                member.setPin(pinView.getText().toString());
+                member.setACL(new ParseACL(ParseUser.getCurrentUser()));
+                member.saveEventually();
 
-                EditText newMemberView = (EditText)getActivity().findViewById(R.id.createMemberNameET);
-                SharedPreferences userPref = getActivity().getSharedPreferences("User_Preferences", Context.MODE_PRIVATE);
-                final SharedPreferences.Editor editor = userPref.edit();
-                if(newMemberView.getText().toString().trim().length() == 0) {
-                    Spinner memberSpinner = (Spinner)getActivity().findViewById(R.id.memberNameSpinner);
-                    final String memberName = memberSpinner.getSelectedItem().toString();
-                    editor.putString("memberName", memberName);
-
-                    //query color to store in pref
-                    ParseQuery<Member> query = ParseQuery.getQuery(Member.class);
-                    query.whereEqualTo("memberName", memberName);
-                    query.findInBackground(new FindCallback<Member>() {
-                        @Override
-                        public void done(List<Member> members, ParseException e) {
-                            if(e == null) {
-                                Member member = members.get(0);
-                                editor.putInt("color", member.getColor());
-                                member.setSyncTokenLong(0);
-                                member.saveEventually();
-                            }
-                        }
-                    });
-
-                    editor.apply();
-                } else {
-                    //Store member name in Members Table
-                    ParseObject member = new ParseObject("Members");
-                    EditText memberNameView = (EditText)getActivity().findViewById(R.id.createMemberNameET);
-                    member.put("memberName", memberNameView.getText().toString());
-                    member.put("color", EventColor.BLUE);
-                    member.setACL(new ParseACL(ParseUser.getCurrentUser()));
-                    member.saveInBackground();
-
-                    //Set member name in preferences file
-                    editor.putString("memberName", memberNameView.getText().toString());
-                    editor.putInt("color", EventColor.BLUE);
-                    editor.apply();
-                }
-
-                Intent intent = new Intent(getActivity(), MainActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(intent);
+                storePref(memberNameView.getText().toString(), EventColor.BLUE);
+                startMainActivity();
             }
         });
+
+        return inflatedView;
+    }
+
+    private void startMainActivity() {
+        Intent intent = new Intent(getActivity(), MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+    }
+
+    private void storePref(String memberName, int color) {
+        SharedPreferences userPref = getActivity().getSharedPreferences("User_Preferences", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = userPref.edit();
+        editor.putString("memberName", memberName);
+        editor.putInt("color", color);
+        editor.apply();
     }
 }
