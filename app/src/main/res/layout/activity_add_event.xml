@@ -33,98 +33,96 @@
         </LinearLayout>
 
         <LinearLayout
-            android:orientation="vertical"
+            android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="15dp"
             android:paddingBottom="15dp">
 
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_clock_grey600_24dp"/>
 
             <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/all_day_setting_text_view"/>
-
-                <LinearLayout
-                    android:orientation="horizontal"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="end">
-                    <Switch
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:orientation="horizontal"
+                android:orientation="vertical"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingTop="15dp"
-                android:paddingBottom="15dp">
+                android:paddingStart="@dimen/new_event_left_padding"
+                android:paddingEnd="0dp"
+                android:paddingLeft="@dimen/new_event_left_padding"
+                android:paddingRight="0dp">
+
 
                 <LinearLayout
                     android:orientation="horizontal"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1">
+                    android:gravity="center_horizontal">
 
                     <TextView
-                        android:layout_width="0dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/all_day_setting_text_view"/>
+
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="end">
+
+                        <Switch
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="15dp"
+                    android:paddingBottom="15dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textAppearance="?android:attr/textAppearanceSmallPopupMenu"
                         android:id="@+id/eventStartDate"
-                        android:layout_weight="1.8"
-                        android:gravity="end"
+                        android:gravity="start"
                         android:clickable="true"
                         android:onClick="setEventStartDate" />
-
                     <TextView
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textAppearance="?android:attr/textAppearanceSmallPopupMenu"
                         android:id="@+id/eventStartTime"
-                        android:layout_weight="1"
                         android:gravity="end"
                         android:clickable="true"
                         android:onClick="setEventStartTime" />
-                </LinearLayout>
-            </LinearLayout>
 
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingTop="15dp"
-                android:paddingBottom="15dp">
+                </LinearLayout>
 
                 <LinearLayout
                     android:orientation="horizontal"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1">
-
+                    android:paddingTop="15dp"
+                    android:paddingBottom="15dp">
                     <TextView
-                        android:layout_width="0dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textAppearance="?android:attr/textAppearanceSmallPopupMenu"
                         android:id="@+id/eventEndDate"
-                        android:layout_weight="1.8"
-                        android:gravity="end"
                         android:clickable="true"
                         android:onClick="setEventEndDate" />
 
                     <TextView
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textAppearance="?android:attr/textAppearanceSmallPopupMenu"
                         android:id="@+id/eventEndTime"
-                        android:layout_weight="1"
                         android:gravity="end"
                         android:clickable="true"
                         android:onClick="setEventEndTime" />
@@ -138,13 +136,24 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="15dp"
-            android:paddingBottom="15dp">
+            android:paddingBottom="15dp"
+            android:gravity="center_horizontal">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_bell_outline_grey600_24dp"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/new_event_alert_text_view"
+                android:paddingStart="@dimen/new_event_left_padding"
+                android:paddingLeft="@dimen/new_event_left_padding"/>
 
             <Spinner
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/eventAlertSpinner"
-                android:layout_weight="1" />
+                android:id="@+id/eventAlertSpinner"/>
 
         </LinearLayout>
 
@@ -154,6 +163,10 @@
             android:layout_height="wrap_content"
             android:paddingTop="15dp"
             android:paddingBottom="15dp">
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_calendar_text_grey600_24dp"/>
 
             <EditText
                 android:layout_width="match_parent"
@@ -161,9 +174,10 @@
                 android:inputType="textMultiLine"
                 android:ems="10"
                 android:id="@+id/eventNoteET"
-                android:layout_weight="1"
                 android:background="#00000000"
-                android:hint="@string/event_note_hint"/>
+                android:hint="@string/event_note_hint"
+                android:paddingStart="@dimen/new_event_left_padding"
+                android:paddingLeft="@dimen/new_event_left_padding"/>
         </LinearLayout>
 
         <LinearLayout
@@ -172,6 +186,11 @@
             android:layout_height="wrap_content"
             android:paddingTop="15dp"
             android:paddingBottom="15dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/event_notify_others_option"/>
 
             <LinearLayout
                 android:orientation="horizontal"
@@ -195,6 +214,11 @@
             android:paddingTop="15dp"
             android:paddingBottom="15dp">
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/upload_to_google_calendar"/>
+
             <LinearLayout
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
@@ -208,57 +232,39 @@
             </LinearLayout>
         </LinearLayout>
 
+
         <LinearLayout
-            android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="15dp"
-            android:gravity="center_horizontal"
-            android:paddingBottom="15dp"
-            android:id="@+id/add_event_BT_layout">
-
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/add_new_event_BT"
-                android:id="@+id/addEvent"
-                android:onClick="addEvent"/>
-        </LinearLayout>
-        <LinearLayout
             android:orientation="horizontal"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
             android:paddingTop="15dp"
-            android:gravity="center_horizontal"
-            android:paddingBottom="15dp"
-            android:visibility="gone"
-            android:id="@+id/save_event_BT_layout">
+            android:paddingBottom="15dp">
 
-            <Button
+            <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/save_event_button"
-                android:id="@+id/saveEvent"
-                android:onClick="saveEvent"/>
-        </LinearLayout>
-
-
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:paddingTop="15dp"
-            android:paddingBottom="15dp"
-            android:visibility="gone"
-            android:id="@+id/delete_event_BT_layout">
-            <Button
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/delete_event_BT"
-                android:background="#c8c20200"
+                android:layout_height="@dimen/abc_action_button_min_height_material"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="@string/delete_sign"
+                android:textSize="30sp"
                 android:id="@+id/deleteEvent"
-                android:onClick="deleteEvent"/>
-        </LinearLayout>
+                android:gravity="center"
+                android:background="@color/v_21_status_bar"
+                android:textColor="@color/edit_text_white_color"
+                android:paddingLeft="20dp"
+                android:paddingRight="20dp"
+                android:clickable="true"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/abc_action_button_min_height_material"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="@string/sign_in_button"
+                android:id="@+id/signInBTInFragment"
+                android:gravity="center"
+                android:background="@color/text_button"
+                android:textColor="@color/edit_text_white_color"
+                android:clickable="true"/>
+    </LinearLayout>
 
 
     </LinearLayout>

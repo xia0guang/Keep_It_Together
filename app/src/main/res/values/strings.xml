@@ -51,7 +51,7 @@
     <string name="event_note_hint">Add description</string>
     <string name="title_activity_edit_event">EditEventActivity</string>
     <string name="delete_event_BT">Delete</string>
-    <string name="event_notify_others_option">Notify other members:</string>
+    <string name="event_notify_others_option">Notify other members</string>
     <string name="title_activity_dispatch">Keep Together</string>
     <string name="google_calendar_setting_TV">Google Calendar:</string>
     <string name="setting_google_calendar_hint">Tap to set Google Calendar</string>
@@ -59,7 +59,7 @@
     <string name="ok">Save</string>
     <string name="cancel">Cancel</string>
     <string name="save_event_button">Save</string>
-    <string name="upload_to_google_calendar">Sync with Google Calendar:</string>
+    <string name="upload_to_google_calendar">Sync with Google Calendar</string>
     <string name="other_members_color">Tap to see other members color...</string>
     <string name="setting_save_button">Save</string>
     <string name="save_in_setting_text">SAVE</string>
@@ -70,6 +70,8 @@
     <string name="member_pin_hint">Member PIN</string>
     <string name="create_member_pin_edit_text">PIN number</string>
     <string name="all_day_setting_text_view">All day</string>
+    <string name="new_event_alert_text_view">Notification</string>
+    <string name="delete_sign">×</string>
 
 
     <string-array name="weekday_list">

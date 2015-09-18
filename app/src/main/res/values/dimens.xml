@@ -7,4 +7,6 @@
     <dimen name="sign_in_up_ud_padding">15dp</dimen>
     <dimen name="fragment_select_member_name_row_text">50dp</dimen>
     <dimen name="member_list_4_times_row">150dp</dimen>
+    <dimen name="new_event_left_padding">20dp</dimen>
+    <dimen name="text_size_to_match_icon">24sp</dimen>
 </resources>
