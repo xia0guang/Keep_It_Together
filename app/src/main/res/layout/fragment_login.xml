@@ -4,7 +4,7 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    tools:context="com.xg.keepittogether.LoginFragment"
+    tools:context="com.xg.keepittogether.Fragment.LoginFragment"
     android:paddingLeft="@dimen/sign_in_up_lr_padding"
     android:paddingRight="@dimen/sign_in_up_lr_padding">
 

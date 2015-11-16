@@ -1,4 +1,4 @@
-package com.xg.keepittogether;
+package com.xg.keepittogether.Fragment;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -10,7 +10,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.w3c.dom.Text;
+import com.xg.keepittogether.R;
 
 public class LoginFragment extends Fragment implements View.OnClickListener{
 

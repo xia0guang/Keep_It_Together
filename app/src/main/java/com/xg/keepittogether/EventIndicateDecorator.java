@@ -39,14 +39,13 @@ public class EventIndicateDecorator implements DayViewDecorator{
 
     @Override
     public void decorate(DayViewFacade view) {
-        CharSequence text = view.getText();
-        SpannableStringBuilder spannableString = new SpannableStringBuilder(text);
+        SpannableStringBuilder spannableString = new SpannableStringBuilder();
         for (Integer color : colors) {
             ForegroundColorSpan colorSpan = new ForegroundColorSpan(color);
             spannableString.append(symbol);
             spannableString.setSpan(colorSpan, spannableString.length()-1, spannableString.length(), 0);
         }
-        view.setText(spannableString);
+        view.addSpan(spannableString);
     }
 
     public void addColor(int  color) {

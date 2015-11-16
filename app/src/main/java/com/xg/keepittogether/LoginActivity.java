@@ -1,7 +1,6 @@
 package com.xg.keepittogether;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -11,6 +10,7 @@ import android.widget.Toast;
 import com.parse.LogInCallback;
 import com.parse.ParseException;
 import com.parse.ParseUser;
+import com.xg.keepittogether.Fragment.LoginFragment;
 
 
 public class LoginActivity extends Activity implements LoginFragment.OnButtonClickedListener{

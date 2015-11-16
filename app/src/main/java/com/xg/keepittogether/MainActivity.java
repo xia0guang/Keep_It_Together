@@ -26,9 +26,10 @@ import com.parse.ParseQuery;
 import com.parse.ParseUser;
 import com.prolificinteractive.materialcalendarview.CalendarDay;
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
-import com.prolificinteractive.materialcalendarview.OnDateChangedListener;
+import com.prolificinteractive.materialcalendarview.OnDateSelectedListener;
 import com.xg.keepittogether.Parse.Member;
 import com.xg.keepittogether.Parse.ParseEventUtils;
+import com.xiaoguang.dispatcherlib.Dispatcher;
 
 import java.io.IOException;
 import java.util.Calendar;
@@ -57,6 +58,11 @@ public class MainActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        if(ParseUser.getCurrentUser() != null) {
+            boolean sdt = true;
+        }
+
         userPref = getSharedPreferences("User_Preferences", MODE_PRIVATE);
         googlePref = getSharedPreferences("Google_Calendar_List", MODE_PRIVATE);
         dataWrapper = ((MyApplication)getApplication()).dataWrapper;
@@ -93,19 +99,20 @@ public class MainActivity extends ActionBarActivity {
 
         //set CalendarView
         calendarView = (MaterialCalendarView) findViewById(R.id.calendarView);
-        calendarView.setShowOtherDates(true);
+        calendarView.setShowOtherDates(MaterialCalendarView.SHOW_ALL);
+        calendarView.setTileSizeDp(25);
         java.util.Calendar today = java.util.Calendar.getInstance();
         calendarView.setSelectedDate(today);
 
 
 
         //implement calendar view date changed listener
-        final OnDateChangedListener mOnDateChangedListener = new OnDateChangedListener() {
+        final OnDateSelectedListener mOnDateChangedListener = new OnDateSelectedListener() {
             @Override
-            public void onDateChanged(MaterialCalendarView materialCalendarView, CalendarDay calendarDay) {
-                calendarView.setCurrentDate(calendarDay);
+            public void onDateSelected(MaterialCalendarView widget, CalendarDay date, boolean selected) {
+                calendarView.setCurrentDate(date);
                 for (int i = 0; i < dataWrapper.eventList.size(); i++) {//limit size is 10000 or it will lag
-                    Calendar changedCal = calendarDay.getCalendar();
+                    Calendar changedCal = date.getCalendar();
                     Calendar curCal = dataWrapper.eventList.get(i).get(0).getStartCal();
                     if (ParseEventUtils.hashCalDay(curCal) >= ParseEventUtils.hashCalDay(changedCal)) {
                         mLayoutManager.scrollToPositionWithOffset(i, 0);

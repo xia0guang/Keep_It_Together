@@ -99,7 +99,6 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
 
         LinearLayout addLayout = (LinearLayout)findViewById(R.id.add_event_BT_layout);
         LinearLayout saveLayout = (LinearLayout)findViewById(R.id.save_event_BT_layout);
-        LinearLayout deleteLayout = (LinearLayout)findViewById(R.id.delete_event_BT_layout);
 
         startCal = Calendar.getInstance();
         endCal = Calendar.getInstance();
@@ -108,7 +107,6 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
 
             addLayout.setVisibility(View.VISIBLE);
             saveLayout.setVisibility(View.GONE);
-            deleteLayout.setVisibility(View.GONE);
         } else {
             startCal.setTimeInMillis(bundle.getLong("startDate"));
             endCal.setTimeInMillis(bundle.getLong("endDate"));
@@ -117,7 +115,6 @@ public class AddEventActivity extends Activity implements DatePickerFragment.OnD
 
             addLayout.setVisibility(View.GONE);
             saveLayout.setVisibility(View.VISIBLE);
-            deleteLayout.setVisibility(View.VISIBLE);
         }
         setEventDateView(startDateView, startCal);
         setEventTimeView(startTimeView, startCal);

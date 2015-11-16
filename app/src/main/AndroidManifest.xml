@@ -90,11 +90,9 @@
                 <action android:name="com.google.android.c2dm.intent.RECEIVE" />
                 <action android:name="com.google.android.c2dm.intent.REGISTRATION" />
 
-<!--                   IMPORTANT: Change "com.parse.tutorials.pushnotifications" to match your app's package name. -->
                 <category android:name="com.xg.keepittogether" />
             </intent-filter>
         </receiver>
-        <!-- <receiver android:name="com.xg.keepittogether.MyPushBroadcastReceiver" android:exported="false"> -->
         <receiver
             android:name="com.parse.ParsePushBroadcastReceiver"
             android:exported="false" >
